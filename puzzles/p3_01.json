@@ -1,0 +1,120 @@
+{
+  "id": "p3_01",
+  "size": 3,
+  "cells": [
+    {
+      "cell": "A1",
+      "name": "Alice",
+      "job": "Cook",
+      "status": "INNOCENT",
+      "clue": {
+        "type": "FACT",
+        "who": "A2",
+        "status": "CRIMINAL"
+      }
+    },
+    {
+      "cell": "B1",
+      "name": "Bob",
+      "job": "Nurse",
+      "status": "INNOCENT",
+      "clue": {
+        "type": "FACT",
+        "who": "C1",
+        "status": "INNOCENT"
+      }
+    },
+    {
+      "cell": "C1",
+      "name": "Cara",
+      "job": "Guard",
+      "status": "INNOCENT",
+      "clue": {
+        "type": "EXACTLY",
+        "k": 1,
+        "region": {
+          "kind": "neighbors",
+          "of": "C3"
+        }
+      }
+    },
+    {
+      "cell": "A2",
+      "name": "Dan",
+      "job": "Pilot",
+      "status": "CRIMINAL",
+      "clue": {
+        "type": "EXACTLY",
+        "k": 1,
+        "region": {
+          "kind": "col",
+          "col": "A"
+        }
+      }
+    },
+    {
+      "cell": "B2",
+      "name": "Eve",
+      "job": "Judge",
+      "status": "CRIMINAL",
+      "clue": {
+        "type": "SAME",
+        "a": "B2",
+        "b": "C3"
+      }
+    },
+    {
+      "cell": "C2",
+      "name": "Finn",
+      "job": "Baker",
+      "status": "INNOCENT",
+      "clue": {
+        "type": "DIFFERENT",
+        "a": "A3",
+        "b": "B2"
+      }
+    },
+    {
+      "cell": "A3",
+      "name": "Gina",
+      "job": "Coder",
+      "status": "INNOCENT",
+      "clue": {
+        "type": "DIFFERENT",
+        "a": "C2",
+        "b": "A2"
+      }
+    },
+    {
+      "cell": "B3",
+      "name": "Hugo",
+      "job": "Farmer",
+      "status": "INNOCENT",
+      "clue": {
+        "type": "AT_MOST",
+        "k": 1,
+        "region": {
+          "kind": "row",
+          "row": 3
+        }
+      }
+    },
+    {
+      "cell": "C3",
+      "name": "Ivy",
+      "job": "Singer",
+      "status": "CRIMINAL",
+      "clue": {
+        "type": "AT_MOST",
+        "k": 1,
+        "region": {
+          "kind": "neighbors",
+          "of": "A2"
+        }
+      }
+    }
+  ],
+  "revealed": [
+    "A1"
+  ]
+}
