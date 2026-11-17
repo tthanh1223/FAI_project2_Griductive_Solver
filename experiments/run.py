@@ -3,10 +3,11 @@
 Owner: Lead.
 
 Columns: id, rows, cols, primary_vars, aux_vars, clauses, sat_calls, decisions,
-propagations, backtracks, steps, waves, time, status (OK / STUCK / TIMEOUT / ERROR).
+propagations, backtracks, steps, time, status (OK / STUCK / TIMEOUT / ERROR).
 Failures and timeouts stay in the table.
 
 Usage: python experiments/run.py [--timeout 60]
+Input / output of every function: docs/INTERFACES.md.
 """
 
 

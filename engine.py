@@ -2,7 +2,9 @@
 
 Owner: Engine & Puzzle.
 Only this module may read Cell.status of unsolved cells and clues of face-down cards.
+Input / output of every function: docs/INTERFACES.md.
 """
+from agent import LogicAgent
 from model import Puzzle
 
 ACCEPTED = "ACCEPTED"
@@ -11,8 +13,9 @@ CONTRADICTED = "CONTRADICTED"
 
 
 class GameEngine:
-    def __init__(self, puzzle: Puzzle):
+    def __init__(self, puzzle: Puzzle, agent: LogicAgent | None = None):
         self.puzzle = puzzle
+        self.agent = agent or LogicAgent()
         self.restart()
 
     def restart(self) -> None:

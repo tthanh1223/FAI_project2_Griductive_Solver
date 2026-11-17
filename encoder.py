@@ -5,6 +5,7 @@ Owner: Encoder.
 Variables: cell index in row-major order + 1 (A1 = 1, B1 = 2, ...); True = CRIMINAL.
 Auxiliary variables start at rows * cols + 1.
 CNF: list[list[int]] (DIMACS style, negative literal = negation).
+Input / output of every function: docs/INTERFACES.md.
 """
 
 

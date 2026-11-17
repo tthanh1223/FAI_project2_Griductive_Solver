@@ -4,6 +4,7 @@ Owner: GUI & Video.
 Grid of cards, CRIMINAL / INNOCENT buttons, list of revealed clues with highlight,
 Load / Restart / Hint / Auto Solve. Always redraw from engine.public_state();
 never read hidden statuses.
+Input / output of every function: docs/INTERFACES.md.
 """
 
 

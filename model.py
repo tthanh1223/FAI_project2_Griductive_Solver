@@ -5,8 +5,12 @@ Owner: Engine & Puzzle.
 Cell ids: column letter + row number, e.g. "A1" (column A, row 1, rows counted top-down).
 A puzzle JSON uses "size": N (square) or "rows" + "cols" (rectangular).
 Clue / region JSON format: see README.md.
+Input / output of every function: docs/INTERFACES.md.
 """
 from dataclasses import dataclass, field
+
+CRIMINAL = "CRIMINAL"
+INNOCENT = "INNOCENT"
 
 
 @dataclass

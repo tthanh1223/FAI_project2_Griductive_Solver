@@ -2,32 +2,46 @@
 
 Owner: DPLL & Agent.
 Receives only GameEngine.public_state(), never the hidden solution.
+Input / output of every function: docs/INTERFACES.md.
 
 For an unsolved cell i:  KB |= C_i  <=>  KB AND (not C_i) is UNSAT.
 """
 
-CRIMINAL = "CRIMINAL"
-INNOCENT = "INNOCENT"
 UNKNOWN = "UNKNOWN"
 INCONSISTENT = "INCONSISTENT"
 
+SOLVED = "SOLVED"
+STUCK = "STUCK"
+
 
 class LogicAgent:
+    def __init__(self):
+        self.reset_stats()
+
+    def reset_stats(self) -> None:
+        """Cumulative counters over every SAT call made by this agent."""
+        self.stats = {"sat_calls": 0, "decisions": 0, "propagations": 0,
+                      "backtracks": 0, "time": 0.0}
+
     def classify(self, public_state: dict) -> dict[str, str] | str:
-        """{cell: CRIMINAL | INNOCENT | UNKNOWN} for every unsolved cell,
-        or INCONSISTENT if the KB itself is UNSAT."""
+        """{cell: CRIMINAL | INNOCENT | UNKNOWN} for every cell not in verdicts
+        (row-major order), or INCONSISTENT if the KB itself is UNSAT."""
         raise NotImplementedError
 
-    def solve(self, engine) -> list[dict]:
-        """Deduction loop until solved or stuck; forced cells are taken in row-major order.
+    def next_move(self, public_state: dict) -> dict | None:
+        """{"cell", "verdict"} of the first forced cell in row-major order, or None."""
+        raise NotImplementedError
 
-        Returns the trace, one dict per step:
-        {"step", "active_clues", "sat_calls", "cell", "verdict", "revealed_clue"}.
+    def hint(self, public_state: dict) -> dict | None:
+        """{"cell", "verdict", "because": [cells whose revealed clue is needed]}, or None."""
+        raise NotImplementedError
+
+    def solve(self, engine) -> dict:
+        """Deduction loop: classify, submit the first forced cell, repeat.
+
+        Returns {"status": SOLVED | STUCK | INCONSISTENT, "steps": [...],
+                 "kb_stats": {...}, "stats": {...}}; see docs/INTERFACES.md.
         """
-        raise NotImplementedError
-
-    def hint(self, public_state: dict):
-        """(cell, verdict, [cells whose clues are needed]) for the next forced cell, or None."""
         raise NotImplementedError
 
 
