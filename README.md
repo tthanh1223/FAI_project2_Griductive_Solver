@@ -70,5 +70,8 @@ Python 3.10+. Tkinter ships with Python.
 
 - One branch per person: `<name>/<topic>`, e.g. `an/dpll`. Open a PR into `main`; someone else reviews.
 - `python -m pytest` must pass before merging.
-- Do not change the function signatures in the stubs without telling the group.
+- Functions in docs/INTERFACES.md are the contract: do not change their signatures or outputs without telling the group.
+- Helper functions are free: prefix them with `_` (e.g. `_unit_propagate`) and keep them inside your own file.
+- Never call another file's `_helper`. If you need it, ask to add it to INTERFACES.md.
+- Small tests for your helpers in `tests/` are welcome (encoder and DPLL especially).
 - Write down what you did (for the contribution % in the report).
