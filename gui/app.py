@@ -33,6 +33,7 @@ SELECT = "#f2c14e"
 HINT = "#7b6cf0"
 BUTTON_BG, BUTTON_ACTIVE = "#2e2826", "#3a3330"
 ACCENT = "#ef8a7a"
+DLG_BG = "#2b2523"
 # colours for the parts of a clue (region, person, second region, ...)
 SEG_COLOURS = ["#6aa9e9", "#f2c14e", "#c08ae8", "#5cc8b8", "#e88aa8"]
 MARK_COLOURS = [None, "#5fae78", "#d0645a", "#f2c14e", "#6aa9e9", "#c08ae8"]
@@ -208,6 +209,7 @@ class App:
         self.hint_state: dict | None = None     # {"cell", "verdict", "because", "revealed": bool}
         self.marks: dict[str, int] = {}
         self.mark_mode = False
+        self.dialog = None
         self.auto_job = None
         self.step_no = 0
 
@@ -227,6 +229,7 @@ class App:
             "init_s": font.Font(family="Segoe UI", size=7, weight="bold"),
             "ui": font.Font(family="Segoe UI", size=9),
             "ui_b": font.Font(family="Segoe UI", size=10, weight="bold"),
+            "dlg_title": font.Font(family="Georgia", size=13, weight="bold"),
             "small": font.Font(family="Consolas", size=8),
         }
         self._build_layout()
@@ -234,7 +237,7 @@ class App:
         root.bind("<Key-i>", lambda _e: self.submit(INNOCENT))
         root.bind("<Key-h>", lambda _e: self.hint())
         root.bind("<space>", lambda _e: self.auto_step(single=True))
-        root.bind("<Escape>", lambda _e: self.clear_focus())
+        root.bind("<Escape>", lambda _e: (self.close_dialog(), self.clear_focus()))
         if puzzle_path:
             self.load(puzzle_path)
         else:
@@ -253,7 +256,7 @@ class App:
         self.info = tk.Label(left, text="", font=self.f["small"], bg=BG, fg=MUTED)
         self.info.pack(anchor="w", pady=(2, 14))
         rules = ("Every person is criminal or innocent, and every clue is true.\n"
-                 "• Click a face-down card, then Criminal or Innocent.\n"
+                 "• Click a face-down card and choose Innocent or Criminal.\n"
                  "• A proved call flips the card and reveals its clue.\n"
                  "• Only call what the clues prove. No guessing.\n"
                  "• Click a clue to see who it talks about.\n"
@@ -278,15 +281,6 @@ class App:
         self.canvas.pack(pady=(0, 10))
         self.canvas.bind("<Button-1>", self.on_click)
         self.canvas.bind("<Button-3>", self.on_right_click)
-
-        verdicts = tk.Frame(right, bg=BG)
-        verdicts.pack(pady=(0, 8))
-        self.btn_crim = FlatButton(verdicts, "Criminal  (C)", lambda: self.submit(CRIMINAL), font=self.f["ui_b"])
-        self.btn_crim.configure(fg=CRIM_EDGE)
-        self.btn_crim.pack(side="left", padx=4)
-        self.btn_inno = FlatButton(verdicts, "Innocent  (I)", lambda: self.submit(INNOCENT), font=self.f["ui_b"])
-        self.btn_inno.configure(fg=INNO_EDGE)
-        self.btn_inno.pack(side="left", padx=4)
 
         bar = tk.Frame(right, bg=BG)
         bar.pack()
@@ -362,7 +356,7 @@ class App:
         rows, cols = state["rows"], state["cols"]
         cv.configure(width=cols * self.p(CARD_W + GAP) + 8, height=rows * self.p(CARD_H + GAP) + 8)
         outlines = self._outlines(state)
-        dimmed = bool(self.focus_clue) or bool(self.hint_state)
+        dimmed = bool(self.focus_clue) or bool(self.hint_state) or self.dialog is not None
         hint_clues = set(self.hint_state["because"]) if self.hint_state else set()
         hint_target = self.hint_state["cell"] if self.hint_state and self.hint_state["revealed"] else None
 
@@ -377,7 +371,7 @@ class App:
             elif verdict == CRIMINAL:
                 bg, edge = CRIM_BG, CRIM_EDGE
             ring = outlines.get(cell)
-            faded = dimmed and not ring and cell != self.focus_clue                 and cell not in hint_clues and cell != hint_target
+            faded = self.dialog is not None or dimmed and not ring and cell != self.focus_clue                 and cell not in hint_clues and cell != hint_target
             if cell == hint_target:
                 edge, width = HINT, 3
             elif cell == self.selected:
@@ -464,9 +458,10 @@ class App:
         if cell in self.state["revealed"]:
             self.focus_clue = None if self.focus_clue == cell else cell
             self.selected = None
-        else:
-            self.selected = None if self.selected == cell else cell
+        elif cell not in self.state["verdicts"]:
             self.focus_clue = None
+            self.open_dialog(cell)
+            return
         self.redraw()
 
     def on_right_click(self, event):
@@ -474,6 +469,95 @@ class App:
         if cell and cell not in self.state["verdicts"]:
             self.marks[cell] = (self.marks.get(cell, 0) + 1) % len(MARK_COLOURS)
             self.redraw()
+
+    # ----- dialogs (verdict choice, rejected verdict)
+
+    def _dialog_frame(self):
+        self.close_dialog()
+        k = self.k
+        d = tk.Frame(self.canvas, bg=DLG_BG, highlightthickness=1, highlightbackground="#4a423e",
+                     padx=int(24 * k), pady=int(16 * k))
+        self.dialog = d
+        return d
+
+    def _dialog_label(self, d, text, fnt, fg, **kw):
+        lab = tk.Label(d, text=text, font=fnt, bg=DLG_BG, fg=fg, **kw)
+        lab.pack()
+        return lab
+
+    def _dialog_button(self, row, text, command, bg, fg, edge):
+        k = self.k
+        b = tk.Label(row, text=text, font=self.f["ui_b"], bg=bg, fg=fg, width=11, pady=int(7 * k),
+                     cursor="hand2", highlightthickness=2, highlightbackground=edge)
+        b.pack(side="left", padx=int(5 * k))
+        b.bind("<Button-1>", lambda _e: command())
+        return b
+
+    def open_dialog(self, cell: str):
+        """Ask Innocent or Criminal for a face-down card."""
+        d = self._dialog_frame()
+        self.selected = cell
+        self.redraw()
+        info = next(c for c in self.state["cells"] if c["cell"] == cell)
+        k = self.k
+        avatar = tk.Canvas(d, width=int(56 * k), height=int(56 * k), bg=DLG_BG, highlightthickness=0)
+        colour = AVATAR_COLOURS[sum(map(ord, info["name"])) % len(AVATAR_COLOURS)]
+        avatar.create_oval(2, 2, 56 * k - 2, 56 * k - 2, fill=colour, outline="#f4efe8", width=2)
+        avatar.create_text(28 * k, 28 * k, text=info["name"][:2], font=self.f["init"], fill="#1d1918")
+        avatar.pack()
+        self._dialog_label(d, info["name"], self.f["ui_b"], PANEL_TEXT)
+        self._dialog_label(d, f"{cell} · {info['job']}", self.f["job"], MUTED)
+        self._dialog_label(d, "Innocent or criminal?", self.f["dlg_title"], PANEL_TEXT,
+                           pady=int(6 * k))
+        self._dialog_label(d, "You can only lock a verdict the clues actually prove. "
+                              "A correct call flips the card and reveals its clue.",
+                           self.f["ui"], CARD_DIM_TEXT, wraplength=int(250 * k), justify="center")
+        row = tk.Frame(d, bg=DLG_BG)
+        row.pack(pady=(int(12 * k), int(6 * k)))
+        self._dialog_button(row, "Innocent", lambda: self.submit(INNOCENT), INNO_BG, INNO_EDGE, INNO_EDGE)
+        self._dialog_button(row, "Criminal", lambda: self.submit(CRIMINAL), CRIM_BG, CRIM_EDGE, CRIM_EDGE)
+        cancel = self._dialog_label(d, "Cancel", self.f["ui"], MUTED, cursor="hand2")
+        cancel.bind("<Button-1>", lambda _e: self.close_dialog(redraw=True))
+        d.place(relx=0.5, rely=0.5, anchor="center")
+
+    def open_rejected(self, cell: str, verdict: str, result: str):
+        """Explain a NOT_PROVABLE / CONTRADICTED verdict."""
+        d = self._dialog_frame()
+        k = self.k
+        name = self.names()[cell]
+        other = INNOCENT if verdict == CRIMINAL else CRIMINAL
+        icon = tk.Canvas(d, width=int(44 * k), height=int(44 * k), bg=DLG_BG, highlightthickness=0)
+        icon_col = SELECT if result == NOT_PROVABLE else CRIM_EDGE
+        icon.create_oval(2, 2, 44 * k - 2, 44 * k - 2, outline=icon_col, width=2, fill="#3a3122")
+        icon.create_text(22 * k, 22 * k, text="!", font=self.f["dlg_title"], fill=icon_col)
+        icon.pack()
+        if result == NOT_PROVABLE:
+            title = "Conclusion not possible"
+            body = (f"You can't prove {name} is {verdict.lower()} from the clues you've unlocked yet: "
+                    f"there's still a consistent case where {name} is {other.lower()}. "
+                    "Unlock more clues first, or lean on a hint.")
+        else:
+            title = "Contradicted"
+            body = (f"The clues you've unlocked prove {name} is {other.lower()}, "
+                    f"so {name} can't be {verdict.lower()}.")
+        self._dialog_label(d, title, self.f["dlg_title"], PANEL_TEXT, pady=int(6 * k))
+        self._dialog_label(d, body, self.f["ui"], CARD_DIM_TEXT, wraplength=int(270 * k), justify="center")
+        row = tk.Frame(d, bg=DLG_BG)
+        row.pack(pady=(int(14 * k), 0))
+        self._dialog_button(row, "Hint", lambda: (self.close_dialog(), self.hint()),
+                            DLG_BG, PANEL_TEXT, "#5c5550")
+        self._dialog_button(row, "Keep looking", lambda: self.close_dialog(redraw=True),
+                            ACCENT, "#1d1918", ACCENT)
+        d.place(relx=0.5, rely=0.5, anchor="center")
+        self.redraw()
+
+    def close_dialog(self, redraw: bool = False):
+        if self.dialog is not None:
+            self.dialog.destroy()
+            self.dialog = None
+            self.selected = None
+            if redraw:
+                self.redraw()
 
     def toggle_mark(self):
         self.mark_mode = not self.mark_mode
@@ -510,13 +594,14 @@ class App:
         if not self.engine:
             return
         self.stop_auto()
+        self.close_dialog()
         self.engine.restart()
         self.agent.reset_stats()
         self.marks, self.step_no = {}, 0
         self.trace.configure(state="normal")
         self.trace.delete("1.0", "end")
         self.trace.configure(state="disabled")
-        self.set_message("Pick a face-down card, then Criminal or Innocent.", MUTED)
+        self.set_message("Click a face-down card to call it.", MUTED)
         self.clear_focus()
 
     def submit(self, verdict: str, cell: str | None = None, source: str = "you"):
@@ -524,11 +609,12 @@ class App:
             return None
         cell = cell or self.selected
         if not cell:
-            self.set_message("Select a face-down card first.", MUTED)
+            self.set_message("Click a face-down card first.", MUTED)
             return None
         state = self.state
         if cell in state["verdicts"]:
             return None
+        self.close_dialog()
         try:
             result = self.engine.submit(cell, verdict)
         except NotImplementedError as e:
@@ -548,6 +634,8 @@ class App:
             self.btn_hint.configure(text="Hint")
             self.btn_hint.set_accent(False)
         self.redraw()
+        if result != ACCEPTED and source == "you":
+            self.open_rejected(cell, verdict, result)
         return result
 
     def hint(self):
