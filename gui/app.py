@@ -209,6 +209,7 @@ class App:
         self.hint_state: dict | None = None     # {"cell", "verdict", "because", "revealed": bool}
         self.marks: dict[str, int] = {}
         self.mark_mode = False
+        self.last_accepted: str | None = None
         self.dialog = None
         self.auto_job = None
         self.step_no = 0
@@ -340,12 +341,22 @@ class App:
                         out.setdefault(c, []).append(col)
         return out
 
-    def _clue_used_up(self, clue, state):
+    def _clue_used_up(self, owner, clue, state):
+        """Cross a clue out once it can no longer help.
+
+        - A clue about people: every cell it talks about is already proved.
+        - A flavour clue (no cells): once the whole board is solved.
+        The card flipped last stays readable.
+        """
+        if owner == self.last_accepted:
+            return False
         try:
             cells = cells_in_clue(clue, state["rows"], state["cols"])
         except NotImplementedError:
             return False
-        return bool(cells) and all(c in state["verdicts"] for c in cells)
+        if not cells:
+            return len(state["verdicts"]) == len(state["cells"])
+        return all(c in state["verdicts"] for c in cells)
 
     def redraw(self):
         cv = self.canvas
@@ -405,13 +416,13 @@ class App:
                 cv.create_text(ax + self.p(14), ay - self.p(6), text=info["name"], anchor="w", font=self.f["name_s"],
                                fill=HINT if cell in hint_clues else text_col)
                 cv.create_text(ax + self.p(14), ay + self.p(6), text=info["job"], anchor="w", font=self.f["job"], fill=dim_col)
-                self._draw_clue(cv, clue, state, x0, y0 + self.p(44), x1, y1, faded, cell == self.focus_clue)
+                self._draw_clue(cv, cell, clue, state, x0, y0 + self.p(44), x1, y1, faded, cell == self.focus_clue)
 
         if self.engine.is_solved():
             self.set_message("Solved! Every verdict was proved.", INNO_EDGE)
 
-    def _draw_clue(self, cv, clue, state, x0, y0, x1, y1, faded, focused):
-        used = self._clue_used_up(clue, state) and not focused
+    def _draw_clue(self, cv, owner, clue, state, x0, y0, x1, y1, faded, focused):
+        used = self._clue_used_up(owner, clue, state) and not focused
         words, colour_i = [], 0
         for text, cells in self._segments(clue, state):
             col = None
@@ -597,7 +608,7 @@ class App:
         self.close_dialog()
         self.engine.restart()
         self.agent.reset_stats()
-        self.marks, self.step_no = {}, 0
+        self.marks, self.step_no, self.last_accepted = {}, 0, None
         self.trace.configure(state="normal")
         self.trace.delete("1.0", "end")
         self.trace.configure(state="disabled")
@@ -630,6 +641,7 @@ class App:
         self.log(f"{self.step_no:>3}. {source:<5} {cell} {verdict:<9} {result}")
         if result == ACCEPTED:
             self.marks.pop(cell, None)
+            self.last_accepted = cell
             self.selected = self.focus_clue = self.hint_state = None
             self.btn_hint.configure(text="Hint")
             self.btn_hint.set_accent(False)
