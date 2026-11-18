@@ -51,6 +51,9 @@ Python 3.10+. Tkinter ships with Python.
 
 ### Clues
 
+Full definitions, CNF encodings, validation rules and test cases: **[docs/CLUES.md](docs/CLUES.md)**.
+
+
 | Type | Fields | Meaning |
 |---|---|---|
 | `FACT` | `who`, `status` | `who` is CRIMINAL / INNOCENT |
@@ -60,11 +63,13 @@ Python 3.10+. Tkinter ships with Python.
 | `COMPARE` | `r1`, `op` (`>` `<` `=`), `r2`, optional `count` | compare counts of two regions |
 | `CONNECTED` | `region`, optional `count` | criminals (or innocents) in a line region are contiguous |
 | `AND` | `parts` | all sub-clues hold |
+| `PARITY` | `parity` (`odd` / `even`), `region`, optional `count` | number of criminals (or innocents) in region is odd / even |
+| `COUNT_LINES` | `axis` (`row` / `col`), `k`, `where` | exactly k rows (columns) satisfy `where` (a counting clue without `region`) |
 | `NONE` | `text` | flavour text, no information |
 
 ### Regions
 
-`{"kind": "row", "row": 2}` · `{"kind": "col", "col": "B"}` · `{"kind": "neighbors", "of": "B2"}` (8 around, not itself) · `{"kind": "cells", "cells": ["A1", "C3"]}` · `{"kind": "all"}` · `{"kind": "edges"}` · `{"kind": "corners"}` · `{"kind": "above", "of": "B4"}` (also `below`, `left`, `right`) · `{"kind": "inter", "regions": [R1, R2]}`
+`{"kind": "row", "row": 2}` · `{"kind": "col", "col": "B"}` · `{"kind": "neighbors", "of": "B2"}` (8 around, not itself) · `{"kind": "cells", "cells": ["A1", "C3"]}` · `{"kind": "all"}` · `{"kind": "edges"}` · `{"kind": "corners"}` · `{"kind": "above", "of": "B4"}` (also `below`, `left`, `right`) · `{"kind": "between", "a": "A1", "b": "D1"}` (strictly between, same row or column) · `{"kind": "inter", "regions": [R1, R2]}`
 
 ## Workflow
 

@@ -45,6 +45,7 @@ Cell id luôn là chuỗi `"A1"` (cột chữ hoa + hàng số, hàng 1 ở trê
 - Output: danh sách ô, row-major, không trùng.
 - `{"kind":"row","row":2}` → `["A2","B2","C2"]` · `{"kind":"neighbors","of":"A1"}` → `["B1","A2","B2"]` · `{"kind":"above","of":"B3"}` → `["B1","B2"]`.
 - Region sai (kind lạ, ô ngoài lưới) → `ValueError`.
+- Định nghĩa từng `kind` (kể cả `between`, `inter`): [CLUES.md §2](CLUES.md#2-vùng-region).
 
 ### `cells_in_clue(clue: dict, rows, cols) -> list[str]`
 Mọi ô clue nhắc tới hoặc đếm, để GUI tô sáng. `{"type":"SAME","a":"B2","b":"C3"}` → `["B2","C3"]`. `NONE` → `[]`.
@@ -93,7 +94,9 @@ Mọi ô clue nhắc tới hoặc đếm, để GUI tô sáng. `{"type":"SAME","
 - `assignment` đủ mọi ô, `True` = tội phạm. Không được gọi `encode_clue`.
 
 ### `validate_clue(clue: dict, rows, cols) -> None`
-Clue sai (type lạ, thiếu trường, ô ngoài lưới, k ngoài `[0, |R|]`) → `ValueError`. Engine gọi cho mọi clue lúc khởi tạo.
+Clue sai (type lạ, thiếu trường, ô ngoài lưới, k ngoài `[0, |R|]`) → `ValueError`. Engine gọi cho mọi clue lúc khởi tạo. Danh sách luật đầy đủ: [CLUES.md §6](CLUES.md#6-validate-validate_clue-lỗi--valueerror).
+
+Nghĩa và cách mã hoá CNF của **từng loại clue** (kể cả `PARITY`, `COUNT_LINES` có biến phụ): [CLUES.md](CLUES.md).
 
 ### `build_kb(public_state) -> (clauses, vm, stats)`
 - `clauses` = CNF mọi clue trong `revealed` + `[var]` / `[-var]` cho mỗi ô trong `verdicts`.

@@ -6,6 +6,7 @@ Variables: cell index in row-major order + 1 (A1 = 1, B1 = 2, ...); True = CRIMI
 Auxiliary variables start at rows * cols + 1.
 CNF: list[list[int]] (DIMACS style, negative literal = negation).
 Input / output of every function: docs/INTERFACES.md.
+Meaning, CNF encoding and validation of every clue type: docs/CLUES.md.
 """
 
 
@@ -34,7 +35,7 @@ def validate_clue(clue: dict, rows: int, cols: int) -> None:
 
 
 def encode_clue(clue: dict, vm: VarMap) -> list[list[int]]:
-    """CNF of one clue (6 core types + extensions)."""
+    """CNF of one clue. Encoding per type: docs/CLUES.md section 4."""
     raise NotImplementedError
 
 
