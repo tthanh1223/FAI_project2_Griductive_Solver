@@ -8,6 +8,8 @@ import random
 
 import pytest
 
+from encoder import encode_count
+
 
 
 def call(fn, *args, **kwargs):
@@ -30,6 +32,7 @@ CLUES_3x3 = [
     {"type": "CONNECTED", "count": "innocent", "region": {"kind": "col", "col": "B"}},
     {"type": "COMPARE", "r1": {"kind": "row", "row": 1}, "op": ">", "r2": {"kind": "row", "row": 3},
      "count": "innocent"},
+    {"type": "AT_LEAST", "k": 2, "count": "innocent", "region": {"kind": "row", "row": 2}},
 ]
 
 # Candle shop puzzle, 4 cols x 5 rows (CLUES.md 7.1)
@@ -145,3 +148,68 @@ def test_validate_rejects(clue):
     except ValueError:
         return
     pytest.fail(f"accepted invalid clue {clue}")
+    
+@pytest.mark.parametrize("n", [5, 6])
+@pytest.mark.parametrize("kind", ["AT_MOST", "AT_LEAST", "EXACTLY"])
+def test_sequential_counter_matches_combinations(n, kind):
+    from encoder import VarMap, encode_count
+    from dpll import dpll_solve
+
+    for k in range(n + 1):
+        direct_vm = VarMap(1, n)
+        seq_vm = VarMap(1, n)
+
+        # Mixed signs also exercise counting negated literals.
+        lits = [i if i % 2 else -i for i in range(1, n + 1)]
+        direct = encode_count(kind, lits, k, direct_vm, limit=2000)
+        sequential = encode_count(kind, lits, k, seq_vm, limit=0)
+
+        if 0 < k < n:
+            assert seq_vm.next_aux > n + 1
+
+        for bits in itertools.product((False, True), repeat=n):
+            fixed = [
+                i if value else -i
+                for i, value in enumerate(bits, start=1)
+            ]
+            total = sum(
+                bits[abs(lit) - 1] == (lit > 0)
+                for lit in lits
+            )
+            expected = {
+                "AT_MOST": total <= k,
+                "AT_LEAST": total >= k,
+                "EXACTLY": total == k,
+            }[kind]
+
+            sat_direct, _, _ = call(
+                dpll_solve, direct, direct_vm.next_aux - 1, fixed
+            )
+            sat_seq, _, _ = call(
+                dpll_solve, sequential, seq_vm.next_aux - 1, fixed
+            )
+            assert sat_direct == sat_seq == expected, (kind, n, k, bits)
+            
+@pytest.mark.parametrize("kind", ["AT_MOST", "AT_LEAST", "EXACTLY"])
+@pytest.mark.parametrize("innocent", [False, True])
+def test_basic_counts_on_512_boards(kind, innocent):
+    from encoder import VarMap, encode_count
+
+    for k in range(4):
+        vm = VarMap(3, 3)
+        column = [vm.var(cell) for cell in ("A1", "A2", "A3")]
+        lits = [-x for x in column] if innocent else column
+        cnf = encode_count(kind, lits, k, vm)
+
+        for bits in itertools.product((False, True), repeat=9):
+            total = sum(bits[x - 1] == (not innocent) for x in column)
+            expected = {
+                "AT_MOST": total <= k,
+                "AT_LEAST": total >= k,
+                "EXACTLY": total == k,
+            }[kind]
+            actual = all(
+                any(bits[abs(lit) - 1] == (lit > 0) for lit in clause)
+                for clause in cnf
+            )
+            assert actual == expected, (kind, innocent, k, bits)
