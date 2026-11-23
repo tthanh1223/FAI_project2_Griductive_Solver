@@ -1,0 +1,129 @@
+{
+  "id": "p3_02",
+  "size": 3,
+  "cells": [
+    {
+      "cell": "A1",
+      "name": "Amy",
+      "job": "Cook",
+      "status": "INNOCENT",
+      "clue": {
+        "type": "DIFFERENT",
+        "a": "A2",
+        "b": "B2"
+      }
+    },
+    {
+      "cell": "B1",
+      "name": "Ben",
+      "job": "Guard",
+      "status": "CRIMINAL",
+      "clue": {
+        "type": "EXACTLY",
+        "k": 1,
+        "region": {
+          "kind": "row",
+          "row": 1
+        }
+      }
+    },
+    {
+      "cell": "C1",
+      "name": "Cole",
+      "job": "Farmer",
+      "status": "INNOCENT",
+      "clue": {
+        "type": "AT_MOST",
+        "k": 1,
+        "region": {
+          "kind": "cells",
+          "cells": [
+            "C2",
+            "C3"
+          ]
+        }
+      }
+    },
+    {
+      "cell": "A2",
+      "name": "Dina",
+      "job": "Clerk",
+      "status": "CRIMINAL",
+      "clue": {
+        "type": "EXACTLY",
+        "k": 1,
+        "region": {
+          "kind": "col",
+          "col": "A"
+        }
+      }
+    },
+    {
+      "cell": "B2",
+      "name": "Ezra",
+      "job": "Painter",
+      "status": "INNOCENT",
+      "clue": {
+        "type": "FACT",
+        "who": "B1",
+        "status": "CRIMINAL"
+      }
+    },
+    {
+      "cell": "C2",
+      "name": "Faye",
+      "job": "Detective",
+      "status": "INNOCENT",
+      "clue": {
+        "type": "AT_LEAST",
+        "k": 3,
+        "region": {
+          "kind": "neighbors",
+          "of": "B2"
+        }
+      }
+    },
+    {
+      "cell": "A3",
+      "name": "Gus",
+      "job": "Astronaut",
+      "status": "INNOCENT",
+      "clue": {
+        "type": "EXACTLY",
+        "k": 1,
+        "region": {
+          "kind": "neighbors",
+          "of": "A3"
+        }
+      }
+    },
+    {
+      "cell": "B3",
+      "name": "Hana",
+      "job": "Doctor",
+      "status": "INNOCENT",
+      "clue": {
+        "type": "SAME",
+        "a": "B3",
+        "b": "C2"
+      }
+    },
+    {
+      "cell": "C3",
+      "name": "Igor",
+      "job": "Baker",
+      "status": "CRIMINAL",
+      "clue": {
+        "type": "EXACTLY",
+        "k": 1,
+        "region": {
+          "kind": "row",
+          "row": 2
+        }
+      }
+    }
+  ],
+  "revealed": [
+    "B2"
+  ]
+}

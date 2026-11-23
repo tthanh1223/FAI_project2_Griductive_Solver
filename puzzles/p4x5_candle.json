@@ -1,0 +1,334 @@
+{
+  "id": "p4x5_candle",
+  "rows": 5,
+  "cols": 4,
+  "cells": [
+    {
+      "cell": "A1",
+      "name": "Abel",
+      "job": "Baker",
+      "status": "CRIMINAL",
+      "clue": {
+        "type": "NONE",
+        "text": "I only came in for the lavender candles."
+      }
+    },
+    {
+      "cell": "B1",
+      "name": "Bella",
+      "job": "Chandler",
+      "status": "CRIMINAL",
+      "clue": {
+        "type": "NONE",
+        "text": "I only came in for the lavender candles."
+      }
+    },
+    {
+      "cell": "C1",
+      "name": "Clara",
+      "job": "Clerk",
+      "status": "INNOCENT",
+      "clue": {
+        "type": "NONE",
+        "text": "I only came in for the lavender candles."
+      }
+    },
+    {
+      "cell": "D1",
+      "name": "Dora",
+      "job": "Cook",
+      "status": "INNOCENT",
+      "clue": {
+        "type": "COMPARE",
+        "r1": {
+          "kind": "neighbors",
+          "of": "A5"
+        },
+        "op": "=",
+        "r2": {
+          "kind": "neighbors",
+          "of": "B5"
+        }
+      }
+    },
+    {
+      "cell": "A2",
+      "name": "Enzo",
+      "job": "Guard",
+      "status": "INNOCENT",
+      "clue": {
+        "type": "NONE",
+        "text": "I only came in for the lavender candles."
+      }
+    },
+    {
+      "cell": "B2",
+      "name": "Fern",
+      "job": "Painter",
+      "status": "INNOCENT",
+      "clue": {
+        "type": "AND",
+        "parts": [
+          {
+            "type": "EXACTLY",
+            "k": 2,
+            "count": "innocent",
+            "region": {
+              "kind": "row",
+              "row": 3
+            }
+          },
+          {
+            "type": "CONNECTED",
+            "count": "innocent",
+            "region": {
+              "kind": "row",
+              "row": 3
+            }
+          }
+        ]
+      }
+    },
+    {
+      "cell": "C2",
+      "name": "Grant",
+      "job": "Farmer",
+      "status": "INNOCENT",
+      "clue": {
+        "type": "AND",
+        "parts": [
+          {
+            "type": "EXACTLY",
+            "k": 4,
+            "count": "innocent",
+            "region": {
+              "kind": "neighbors",
+              "of": "C5"
+            }
+          },
+          {
+            "type": "EXACTLY",
+            "k": 1,
+            "count": "innocent",
+            "region": {
+              "kind": "inter",
+              "regions": [
+                {
+                  "kind": "neighbors",
+                  "of": "C5"
+                },
+                {
+                  "kind": "row",
+                  "row": 5
+                }
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "cell": "D2",
+      "name": "Hazel",
+      "job": "Chandler",
+      "status": "CRIMINAL",
+      "clue": {
+        "type": "NONE",
+        "text": "I only came in for the lavender candles."
+      }
+    },
+    {
+      "cell": "A3",
+      "name": "Ivy",
+      "job": "Doctor",
+      "status": "INNOCENT",
+      "clue": {
+        "type": "NONE",
+        "text": "I only came in for the lavender candles."
+      }
+    },
+    {
+      "cell": "B3",
+      "name": "Jonas",
+      "job": "Clerk",
+      "status": "INNOCENT",
+      "clue": {
+        "type": "NONE",
+        "text": "I only came in for the lavender candles."
+      }
+    },
+    {
+      "cell": "C3",
+      "name": "Karl",
+      "job": "Chandler",
+      "status": "CRIMINAL",
+      "clue": {
+        "type": "PARITY",
+        "parity": "odd",
+        "count": "innocent",
+        "region": {
+          "kind": "between",
+          "a": "A1",
+          "b": "D1"
+        }
+      }
+    },
+    {
+      "cell": "D3",
+      "name": "Lucy",
+      "job": "Singer",
+      "status": "CRIMINAL",
+      "clue": {
+        "type": "NONE",
+        "text": "I only came in for the lavender candles."
+      }
+    },
+    {
+      "cell": "A4",
+      "name": "Mona",
+      "job": "Guard",
+      "status": "INNOCENT",
+      "clue": {
+        "type": "COUNT_LINES",
+        "axis": "row",
+        "k": 1,
+        "where": {
+          "type": "EXACTLY",
+          "k": 1
+        }
+      }
+    },
+    {
+      "cell": "B4",
+      "name": "Noah",
+      "job": "Painter",
+      "status": "INNOCENT",
+      "clue": {
+        "type": "AND",
+        "parts": [
+          {
+            "type": "EXACTLY",
+            "k": 2,
+            "count": "innocent",
+            "region": {
+              "kind": "right",
+              "of": "A2"
+            }
+          },
+          {
+            "type": "CONNECTED",
+            "count": "innocent",
+            "region": {
+              "kind": "right",
+              "of": "A2"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "cell": "C4",
+      "name": "Otis",
+      "job": "Cook",
+      "status": "INNOCENT",
+      "clue": {
+        "type": "NONE",
+        "text": "I only came in for the lavender candles."
+      }
+    },
+    {
+      "cell": "D4",
+      "name": "Piper",
+      "job": "Farmer",
+      "status": "INNOCENT",
+      "clue": {
+        "type": "AND",
+        "parts": [
+          {
+            "type": "FACT",
+            "who": "D2",
+            "status": "CRIMINAL"
+          },
+          {
+            "type": "EXACTLY",
+            "k": 2,
+            "region": {
+              "kind": "above",
+              "of": "D5"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "cell": "A5",
+      "name": "Quilla",
+      "job": "Doctor",
+      "status": "CRIMINAL",
+      "clue": {
+        "type": "EXACTLY",
+        "k": 2,
+        "count": "innocent",
+        "region": {
+          "kind": "inter",
+          "regions": [
+            {
+              "kind": "between",
+              "a": "B1",
+              "b": "B5"
+            },
+            {
+              "kind": "neighbors",
+              "of": "A4"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "cell": "B5",
+      "name": "Roy",
+      "job": "Baker",
+      "status": "CRIMINAL",
+      "clue": {
+        "type": "CONNECTED",
+        "count": "innocent",
+        "region": {
+          "kind": "above",
+          "of": "A5"
+        }
+      }
+    },
+    {
+      "cell": "C5",
+      "name": "Senna",
+      "job": "Chandler",
+      "status": "INNOCENT",
+      "clue": {
+        "type": "COMPARE",
+        "r1": {
+          "kind": "neighbors",
+          "of": "A1"
+        },
+        "op": ">",
+        "r2": {
+          "kind": "neighbors",
+          "of": "A3"
+        }
+      }
+    },
+    {
+      "cell": "D5",
+      "name": "Theo",
+      "job": "Clerk",
+      "status": "INNOCENT",
+      "clue": {
+        "type": "NONE",
+        "text": "I only came in for the lavender candles."
+      }
+    }
+  ],
+  "revealed": [
+    "A5"
+  ]
+}
