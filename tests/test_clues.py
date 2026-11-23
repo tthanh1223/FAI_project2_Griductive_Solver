@@ -8,9 +8,6 @@ import random
 
 import pytest
 
-from encoder import encode_count
-
-
 
 def call(fn, *args, **kwargs):
     try:
@@ -148,11 +145,12 @@ def test_validate_rejects(clue):
     except ValueError:
         return
     pytest.fail(f"accepted invalid clue {clue}")
-    
+
+
 @pytest.mark.parametrize("n", [5, 6])
 @pytest.mark.parametrize("kind", ["AT_MOST", "AT_LEAST", "EXACTLY"])
 def test_sequential_counter_matches_combinations(n, kind):
-    from encoder import VarMap, encode_count
+    from encoder import VarMap, _encode_count
     from dpll import dpll_solve
 
     for k in range(n + 1):
@@ -161,8 +159,8 @@ def test_sequential_counter_matches_combinations(n, kind):
 
         # Mixed signs also exercise counting negated literals.
         lits = [i if i % 2 else -i for i in range(1, n + 1)]
-        direct = encode_count(kind, lits, k, direct_vm, limit=2000)
-        sequential = encode_count(kind, lits, k, seq_vm, limit=0)
+        direct = _encode_count(kind, lits, k, direct_vm, limit=2000)
+        sequential = _encode_count(kind, lits, k, seq_vm, limit=0)
 
         if 0 < k < n:
             assert seq_vm.next_aux > n + 1
@@ -189,17 +187,18 @@ def test_sequential_counter_matches_combinations(n, kind):
                 dpll_solve, sequential, seq_vm.next_aux - 1, fixed
             )
             assert sat_direct == sat_seq == expected, (kind, n, k, bits)
-            
+
+
 @pytest.mark.parametrize("kind", ["AT_MOST", "AT_LEAST", "EXACTLY"])
 @pytest.mark.parametrize("innocent", [False, True])
 def test_basic_counts_on_512_boards(kind, innocent):
-    from encoder import VarMap, encode_count
+    from encoder import VarMap, _encode_count
 
     for k in range(4):
         vm = VarMap(3, 3)
         column = [vm.var(cell) for cell in ("A1", "A2", "A3")]
         lits = [-x for x in column] if innocent else column
-        cnf = encode_count(kind, lits, k, vm)
+        cnf = _encode_count(kind, lits, k, vm)
 
         for bits in itertools.product((False, True), repeat=9):
             total = sum(bits[x - 1] == (not innocent) for x in column)
@@ -213,3 +212,93 @@ def test_basic_counts_on_512_boards(kind, innocent):
                 for clause in cnf
             )
             assert actual == expected, (kind, innocent, k, bits)
+
+
+# Spec reference counts (CLUES.md 7.1): the truth-table encodings must not change.
+SPEC_CLAUSES_4x5 = {"D1": 48, "B2": 12, "C2": 13, "C3": 2, "A4": 91,
+                    "B4": 5, "D4": 9, "A5": 2, "B5": 4, "C5": 60}
+
+
+@pytest.mark.parametrize("cell", list(CLUES_4x5))
+def test_clause_counts_match_spec(cell):
+    from encoder import VarMap, encode_clue
+    vm = VarMap(5, 4)
+    cnf = call(encode_clue, CLUES_4x5[cell], vm)
+    assert len(cnf) == SPEC_CLAUSES_4x5[cell]
+    assert vm.next_aux - 1 - 20 == (5 if cell == "A4" else 0)
+
+
+def _matches_evaluator(cnf, vm, clue, rows, cols, assignments):
+    from model import all_cells
+    from encoder import evaluate_clue
+    from dpll import dpll_solve
+    cells = call(all_cells, rows, cols)
+    assert all(c and 0 not in c for c in cnf), "empty clause or literal 0"
+    for bits in assignments(len(cells)):
+        a = dict(zip(cells, bits))
+        lits = [vm.var(x) if a[x] else -vm.var(x) for x in cells]
+        sat, _, _ = call(dpll_solve, cnf, vm.next_aux - 1, lits)
+        assert sat == evaluate_clue(clue, a, rows, cols), (clue, a)
+
+
+def _all_boards(n):
+    return itertools.product([False, True], repeat=n)
+
+
+@pytest.mark.parametrize("count", ["criminal", "innocent"])
+@pytest.mark.parametrize("parity", ["odd", "even"])
+@pytest.mark.parametrize("region", [{"kind": "all"}, {"kind": "row", "row": 2}, N("B2"), N("A1")])
+def test_compact_parity_matches_evaluator(region, parity, count):
+    """XOR chain (forced with limit=0) == evaluator on all 512 boards of 3x3."""
+    from encoder import VarMap, _encode_parity
+    clue = {"type": "PARITY", "parity": parity, "count": count, "region": region}
+    vm = VarMap(3, 3)
+    cnf = call(_encode_parity, clue, vm, limit=0)
+    _matches_evaluator(cnf, vm, clue, 3, 3, _all_boards)
+
+
+COMPARE_PAIRS = [
+    (N("A1"), N("C3")),                                # disjoint except B2
+    ({"kind": "row", "row": 1}, {"kind": "row", "row": 3}),  # disjoint
+    ({"kind": "all"}, {"kind": "row", "row": 2}),     # r2 inside r1
+    ({"kind": "row", "row": 2}, {"kind": "all"}),     # r1 inside r2
+    (N("B2"), N("B2")),                                # identical
+    ({"kind": "above", "of": "A1"}, N("C1")),          # empty r1
+    (N("C1"), {"kind": "above", "of": "A1"}),          # empty r2
+]
+
+
+@pytest.mark.parametrize("count", ["criminal", "innocent"])
+@pytest.mark.parametrize("op", ["<", ">", "="])
+@pytest.mark.parametrize("pair", range(len(COMPARE_PAIRS)))
+def test_compact_compare_matches_evaluator(pair, op, count):
+    """Counter form of COMPARE (forced with limit=0) == evaluator on all 512 boards of 3x3."""
+    from encoder import VarMap, _encode_compare
+    r1, r2 = COMPARE_PAIRS[pair]
+    clue = {"type": "COMPARE", "r1": r1, "op": op, "r2": r2, "count": count}
+    vm = VarMap(3, 3)
+    cnf = call(_encode_compare, clue, vm, limit=0)
+    _matches_evaluator(cnf, vm, clue, 3, 3, _all_boards)
+
+
+TOP_8 = {"kind": "cells", "cells": ["A1", "B1", "C1", "D1", "A2", "B2", "C2", "D2"]}
+BOTTOM_8 = {"kind": "cells", "cells": ["A3", "B3", "C3", "D3", "A4", "B4", "C4", "D4"]}
+
+
+@pytest.mark.parametrize("clue", [
+    {"type": "PARITY", "parity": "odd", "region": {"kind": "all"}},
+    {"type": "PARITY", "parity": "even", "count": "innocent", "region": {"kind": "all"}},
+    # 8 vs 8 cells: true and false both come up often, and the counter is the sequential one.
+    {"type": "COMPARE", "r1": TOP_8, "op": "=", "r2": BOTTOM_8},
+    {"type": "COMPARE", "r1": TOP_8, "op": ">", "r2": BOTTOM_8, "count": "innocent"},
+    {"type": "COMPARE", "r1": TOP_8, "op": "<", "r2": BOTTOM_8},
+], ids=lambda c: c["type"])
+def test_16_cell_clues_are_small_and_correct(clue):
+    """|U| = 16 on 4x4: no 2^16-row truth table, still equal to the evaluator."""
+    from encoder import VarMap, encode_clue
+    vm = VarMap(4, 4)
+    cnf = call(encode_clue, clue, vm)
+    assert len(cnf) < 1000
+    rng = random.Random(14003)
+    _matches_evaluator(cnf, vm, clue, 4, 4,
+                       lambda n: ([rng.random() < 0.5 for _ in range(n)] for _ in range(300)))

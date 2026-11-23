@@ -117,6 +117,10 @@ Gọi U là các ô clue dùng tới (COMPARE: hợp r1 ∪ r2, row-major; PARIT
 - Ví dụ PARITY odd trên A1 B1 C1 (biến 1, 2, 3) cấm 4 cách gán chẵn: `[1,2,3], [1,-2,-3], [-1,2,-3], [-1,-2,3]`.
 - Số mệnh đề ≤ 2^|U|. Giới hạn: **|U| ≤ 16** (validate báo lỗi nếu lớn hơn). Clue "hàng 1 nhiều hơn mọi hàng khác" phải tách thành AND các COMPARE 2 hàng.
 - PARITY trên vùng rỗng: odd luôn sai, even luôn đúng. Validate **cấm** PARITY vùng rỗng, để không sinh mệnh đề rỗng.
+- **Clue lớn (2^|U| > 2 000, tức |U| ≥ 11) không dùng bảng chân trị** (tới 65 536 mệnh đề, DPLL rất chậm) mà dùng biến phụ:
+  - PARITY: chuỗi XOR trên các literal được đếm ℓ1..ℓn. t1 = ℓ1; với i = 2..n cấp `ti = vm.new_aux()`, ti ⇔ t(i−1) ⊕ ℓi: `[-ti, t, ℓ], [-ti, -t, -ℓ], [ti, -t, ℓ], [ti, t, -ℓ]` (t = t(i−1), ℓ = ℓi). Cuối cùng `[tn]` nếu odd, `[-tn]` nếu even.
+  - COMPARE: ô nằm trong cả r1 lẫn r2 cộng như nhau vào hai vế nên bỏ đi. Với A = r1 \ r2, B = r2 \ r1 thì `n1 op n2` ⇔ `count(lit(A) + ¬lit(B)) op |B|`, tức `=` → EXACTLY |B|, `>` → AT_LEAST |B|+1, `<` → AT_MOST |B|−1 (§4.1, bộ đếm tuần tự §4.4 khi lớn). k ngoài [0, |A|+|B|] thì clue luôn sai: `[[x], [-x]]` với x là biến phụ mới.
+  - Mọi ví dụ và số mệnh đề tham khảo ở §7.1 có |U| ≤ 10 nên vẫn dùng bảng chân trị, không đổi.
 
 ### 4.3 CONNECTED
 
@@ -199,6 +203,7 @@ Engine gọi cho mọi clue lúc tải puzzle, kể cả clue con trong AND và 
 3. **Bộ đếm tuần tự ≡ tổ hợp:** EXACTLY/AT_MOST/AT_LEAST trên vùng 5–6 ô, mọi k, ép dùng bộ đếm tuần tự rồi so với cách tổ hợp.
 4. **Vùng:** từng dòng bảng §2 (cột "Ví dụ") là một assert.
 5. **Validate:** mỗi gạch đầu dòng §6 có ít nhất một clue sai bị bắt.
+6. **Mã hoá gọn ≡ evaluator:** PARITY và COMPARE ép dùng chuỗi XOR / bộ đếm (bỏ qua giới hạn 2 000), so với `evaluate_clue` trên mọi 512 cách gán 3×3; clue 16 ô trên 4×4 phải sinh ít mệnh đề và vẫn đúng.
 
 ### 7.1 Puzzle thật dùng làm test (cửa hàng nến, 4 cột × 5 hàng)
 
