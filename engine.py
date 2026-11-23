@@ -24,13 +24,13 @@ class GameEngine:
 
         The puzzle is deep-copied, so later changes to the caller's object do not
         affect the engine. Raises ValueError if the cells are not exactly the grid
-        cells, a status is not CRIMINAL / INNOCENT, a revealed cell does not exist,
-        a clue is invalid (encoder.validate_clue) or a clue is false on the hidden
-        solution. The last check guarantees that the public knowledge base is
-        always consistent.
+        cells, a status is not CRIMINAL / INNOCENT, no card is face-up or a
+        revealed cell does not exist, a clue is invalid (encoder.validate_clue) or
+        a clue is false on the hidden solution. The last check guarantees that the
+        public knowledge base is always consistent.
         """
         self._puzzle = copy.deepcopy(puzzle)
-        self.agent = agent or LogicAgent()
+        self.agent = agent if agent is not None else LogicAgent()
         rows, cols = self._puzzle.rows, self._puzzle.cols
         grid = all_cells(rows, cols)
 
@@ -41,7 +41,9 @@ class GameEngine:
         for c in self._cells:
             if c.status not in (CRIMINAL, INNOCENT):
                 raise ValueError(f"Cell {c.cell}: invalid status {c.status!r}")
-        unknown = [cell for cell in self._puzzle.revealed if cell not in by_cell]
+        if not self._puzzle.revealed:
+            raise ValueError(f"Puzzle {self._puzzle.id}: at least one card must be face-up")
+        unknown = [cell for cell in self._puzzle.revealed if not isinstance(cell, str) or cell not in by_cell]
         if unknown:
             raise ValueError(f"Revealed cells not in the grid: {unknown}")
 
@@ -100,7 +102,7 @@ class GameEngine:
         returns INCONSISTENT or no result for the cell; both mean a bug in the
         encoder / agent, and the state is left unchanged.
         """
-        if cell not in self._status:
+        if not isinstance(cell, str) or cell not in self._status:
             raise ValueError(f"Unknown cell: {cell!r}")
         if verdict not in (CRIMINAL, INNOCENT):
             raise ValueError(f"Verdict must be {CRIMINAL} or {INNOCENT}, got {verdict!r}")

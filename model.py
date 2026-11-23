@@ -56,15 +56,16 @@ def load_puzzle(path: str) -> Puzzle:
     Only the structure is checked here; clue semantics are checked by GameEngine
     (encoder.validate_clue), since encoder imports this module.
 
-    Raises ValueError (message starts with the file name) on invalid JSON, a missing
-    or ill-typed field, a cell count other than rows * cols, a duplicate or
-    off-grid cell id, an unknown status, or an empty / invalid "revealed" list.
-    A missing file raises OSError as usual.
+    Raises ValueError (message starts with the file name) on a file that is not
+    UTF-8, invalid JSON, a missing or ill-typed field, a cell count other than
+    rows * cols, a duplicate or off-grid cell id, an unknown status, or an
+    empty / invalid "revealed" list. A missing file raises OSError as usual.
     """
     path = Path(path)
-    text = path.read_text(encoding="utf-8-sig")
     try:
-        data = json.loads(text)
+        data = json.loads(path.read_text(encoding="utf-8-sig"))
+    except UnicodeDecodeError as e:
+        raise ValueError(f"{path.name}: not a UTF-8 file ({e})") from None
     except json.JSONDecodeError as e:
         raise ValueError(f"{path.name}: invalid JSON ({e})") from None
     try:
@@ -163,7 +164,7 @@ def _region_positions(region, rows: int, cols: int) -> set[tuple[int, int]]:
     if not isinstance(region, dict):
         raise ValueError(f"A region must be an object, got {region!r}")
     kind = region.get("kind")
-    if kind not in _REGION_FIELDS:
+    if not isinstance(kind, str) or kind not in _REGION_FIELDS:
         raise ValueError(f"Unknown region kind: {kind!r}")
     if region.keys() != _REGION_FIELDS[kind] | {"kind"}:
         raise ValueError(f"Region {kind!r} needs exactly the fields {sorted(_REGION_FIELDS[kind])}, "

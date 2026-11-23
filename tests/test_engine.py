@@ -99,7 +99,7 @@ def test_three_results_and_flip():
 
 
 @pytest.mark.parametrize("cell, verdict", [
-    ("D1", CRIMINAL), ("a2", CRIMINAL), (None, CRIMINAL),      # unknown cell
+    ("D1", CRIMINAL), ("a2", CRIMINAL), (None, CRIMINAL), (["A2"], CRIMINAL),   # unknown cell
     ("A2", "criminal"), ("A2", "UNKNOWN"), ("A2", None),      # bad verdict
     ("A1", INNOCENT), ("A1", CRIMINAL),                       # face-up at the start
 ])
@@ -134,6 +134,12 @@ def test_default_agent_and_injected_agent():
     agent = LogicAgent(optimized=False)
     assert GameEngine(_p3(), agent).agent is agent
 
+    class FalsyAgent(LogicAgent):          # an injected agent is kept even if it is falsy
+        def __len__(self):
+            return 0
+    falsy = FalsyAgent()
+    assert GameEngine(_p3(), falsy).agent is falsy
+
 
 # ---------- puzzle checks at construction ----------
 
@@ -156,6 +162,8 @@ def _with(edit):
     (lambda p: setattr(p.cells[1], "cell", "A1"), "grid"),
     (lambda p: setattr(p.cells[8], "cell", "D4"), "grid"),
     (lambda p: p.revealed.append("Z1"), "Revealed"),
+    (lambda p: p.revealed.append(["B1"]), "Revealed"),
+    (lambda p: p.revealed.clear(), "face-up"),
 ])
 def test_bad_puzzles_are_rejected(edit, message):
     with pytest.raises(ValueError, match=message):

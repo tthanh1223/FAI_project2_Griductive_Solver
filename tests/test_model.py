@@ -169,6 +169,13 @@ def test_invalid_json_or_not_object(tmp_path, text):
         load_puzzle(_write(tmp_path, text, name="bad.json"))
 
 
+def test_file_not_utf8(tmp_path):
+    path = tmp_path / "bad.json"
+    path.write_bytes(b'{"id": "caf\xe9"}')                    # Latin-1, not UTF-8
+    with pytest.raises(ValueError, match=r"^bad\.json: not a UTF-8 file"):
+        load_puzzle(path)
+
+
 def test_missing_file_is_os_error(tmp_path):
     with pytest.raises(OSError):
         load_puzzle(tmp_path / "nope.json")
@@ -232,7 +239,7 @@ def test_region_input_not_modified():
 # ---------- region_cells: errors ----------
 
 @pytest.mark.parametrize("region", [
-    "row 1", None, {}, {"kind": "diagonal"}, {"kind": "ROW", "row": 1},
+    "row 1", None, {}, {"kind": "diagonal"}, {"kind": "ROW", "row": 1}, {"kind": ["row"], "row": 1},
     {"kind": "row"}, {"kind": "row", "row": 1, "col": "A"}, {"kind": "all", "of": "A1"},
     {"kind": "row", "row": 0}, {"kind": "row", "row": 4}, {"kind": "row", "row": True},
     {"kind": "row", "row": "1"}, {"kind": "row", "row": 1.0},
