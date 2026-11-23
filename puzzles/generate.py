@@ -30,6 +30,16 @@ from engine import GameEngine
 from model import CRIMINAL, INNOCENT, Cell, Puzzle, all_cells, region_cells
 from puzzles.validate import puzzle_problems
 
+# The characters that have avatars in assets/avatars/ (used by the GUI), in alphabetical
+# order; cell i in row-major order gets CAST[i], so names increase alphabetically.
+CAST = [("Alice", "Cook"), ("Bob", "Nurse"), ("Cara", "Guard"), ("Dan", "Pilot"), ("Eve", "Judge"),
+        ("Finn", "Baker"), ("Gina", "Coder"), ("Hugo", "Farmer"), ("Ivy", "Singer"),
+        ("Jack", "Doctor"), ("Kate", "Painter"), ("Liam", "Clerk"), ("Mia", "Librarian"),
+        ("Noah", "Teacher"), ("Olive", "Driver"), ("Paul", "Sailor"), ("Quinn", "Photographer"),
+        ("Rosa", "Florist"), ("Sam", "Mechanic"), ("Tina", "Dancer"), ("Uma", "Scientist"),
+        ("Victor", "Detective"), ("Wendy", "Reporter"), ("Xander", "Magician"), ("Yuki", "Student")]
+# Old name and job lists: no longer shown, but still drawn from so the random stream,
+# and therefore every clue, stays the same as in the stored puzzles.
 NAMES = ["Abel", "Bea", "Clara", "Derek", "Eliza", "Franz", "Grant", "Hannah", "Ivy", "Jonas",
          "Karl", "Leo", "Mara", "Noah", "Owen", "Priya", "Quilla", "Roy", "Sophia", "Tom",
          "Uma", "Victor", "Wendy", "Xavier", "Yara", "Zane", "Alma", "Boris", "Celia", "Dmitri",
@@ -197,12 +207,13 @@ def _attempt(rows: int, cols: int, rng: random.Random, agent: LogicAgent) -> dic
         answer = {cell: rng.random() < CRIMINAL_RATIO for cell in cells}
         if 0 < sum(answer.values()) < len(cells):
             break
-    names = sorted(rng.sample(NAMES, len(cells)), key=str.casefold)
-    jobs = [rng.choice(JOBS) for _ in cells]
+    rng.sample(NAMES, len(cells))                    # unused draws: keep the random stream
+    for _ in cells:
+        rng.choice(JOBS)
     start = rng.choice(cells)
 
     state = {"rows": rows, "cols": cols,
-             "cells": [{"cell": c, "name": n, "job": j} for c, n, j in zip(cells, names, jobs)],
+             "cells": [{"cell": c, "name": n, "job": j} for c, (n, j) in zip(cells, CAST)],
              "revealed": {}, "verdicts": {start: _status(answer[start])}}
     current = start
     while len(state["verdicts"]) < len(cells):
@@ -257,10 +268,10 @@ def puzzle_id(rows: int, cols: int, index: int) -> str:
 
 
 def check_size(rows: int, cols: int) -> None:
-    """Raises ValueError unless 2 <= rows, 2 <= cols <= 26 and there are enough names."""
-    if not (2 <= rows and 2 <= cols <= 26 and rows * cols <= len(NAMES)):
+    """Raises ValueError unless 2 <= rows, 2 <= cols <= 26 and there are enough characters."""
+    if not (2 <= rows and 2 <= cols <= 26 and rows * cols <= len(CAST)):
         raise ValueError(f"Unsupported size: {rows} rows x {cols} cols "
-                         f"(need rows, cols >= 2, cols <= 26, rows * cols <= {len(NAMES)})")
+                         f"(need rows, cols >= 2, cols <= 26, rows * cols <= {len(CAST)})")
 
 
 def generate(rows: int, cols: int, seed: int, index: int) -> dict:

@@ -1,6 +1,8 @@
 """Tests for puzzles/generate.py: validity, determinism, clue quality, command line."""
+import json
 import os
 import random
+import re
 import subprocess
 import sys
 from pathlib import Path
@@ -9,7 +11,7 @@ import pytest
 
 from encoder import VarMap, encode_clue, evaluate_clue
 from model import CRIMINAL, INNOCENT, Cell, Puzzle, all_cells, load_puzzle
-from puzzles.generate import (_to_puzzle, check_size, difficulty, generate, is_useful_clue, main,
+from puzzles.generate import (CAST, _to_puzzle, check_size, difficulty, generate, is_useful_clue, main,
                               puzzle_id, random_clue, to_json)
 from puzzles.validate import puzzle_problems
 
@@ -91,15 +93,31 @@ def test_difficulty_rejects_puzzle_that_needs_guessing():
         difficulty(Puzzle("stuck", 2, 2, cells, ["A1"]))
 
 
-@pytest.mark.parametrize("rows, cols", [(1, 3), (3, 1), (7, 7), (6, 7), (2, 27)])
+@pytest.mark.parametrize("rows, cols", [(1, 3), (3, 1), (7, 7), (5, 6), (2, 13), (2, 27)])
 def test_unsupported_sizes(rows, cols):
     with pytest.raises(ValueError):
         generate(rows, cols, SEED, 1)
 
 
-@pytest.mark.parametrize("rows, cols", [(2, 2), (5, 8), (8, 5), (2, 20)])
+@pytest.mark.parametrize("rows, cols", [(2, 2), (5, 5), (5, 4), (2, 12)])
 def test_size_limits_that_are_accepted(rows, cols):
-    check_size(rows, cols)                      # 2 rows / 2 cols and 40 cells (= number of names) are the limits
+    check_size(rows, cols)                      # 2 rows / 2 cols and 25 cells (= number of characters) are the limits
+
+
+def test_every_character_has_an_avatar():
+    names = [n for n, _ in CAST]
+    assert names == sorted(names, key=str.casefold) and len(set(names)) == len(names)
+    for name in names:
+        assert (ROOT / "assets" / "avatars" / f"{name.lower()}_32.png").is_file(), name
+
+
+@pytest.mark.parametrize("path", sorted((ROOT / "puzzles").glob("g*.json")), ids=lambda p: p.stem)
+def test_stored_puzzles_are_regenerated_with_seed_0(path):
+    """README command (seed 0) gives back the stored file: same clues, names and jobs."""
+    cols, rows, index = re.fullmatch(r"g(\d+)(?:x(\d+))?_(\d+)", path.stem).groups()
+    cols, index = int(cols), int(index)
+    rows = int(rows) if rows else cols
+    assert generate(rows, cols, 0, index) == json.loads(path.read_text(encoding="utf-8"))
 
 
 def test_smallest_grid_is_generated():
