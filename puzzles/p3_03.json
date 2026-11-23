@@ -4,8 +4,8 @@
   "cells": [
     {
       "cell": "A1",
-      "name": "Alma",
-      "job": "Singer",
+      "name": "Alice",
+      "job": "Cook",
       "status": "CRIMINAL",
       "clue": {
         "type": "SAME",
@@ -15,8 +15,8 @@
     },
     {
       "cell": "B1",
-      "name": "Boris",
-      "job": "Judge",
+      "name": "Bob",
+      "job": "Nurse",
       "status": "INNOCENT",
       "clue": {
         "type": "AT_LEAST",
@@ -29,8 +29,8 @@
     },
     {
       "cell": "C1",
-      "name": "Celia",
-      "job": "Pilot",
+      "name": "Cara",
+      "job": "Guard",
       "status": "CRIMINAL",
       "clue": {
         "type": "EXACTLY",
@@ -43,8 +43,8 @@
     },
     {
       "cell": "A2",
-      "name": "Dmitri",
-      "job": "Coder",
+      "name": "Dan",
+      "job": "Pilot",
       "status": "INNOCENT",
       "clue": {
         "type": "AT_LEAST",
@@ -57,8 +57,8 @@
     },
     {
       "cell": "B2",
-      "name": "Elsa",
-      "job": "Nurse",
+      "name": "Eve",
+      "job": "Judge",
       "status": "CRIMINAL",
       "clue": {
         "type": "AT_MOST",
@@ -71,8 +71,8 @@
     },
     {
       "cell": "C2",
-      "name": "Felix",
-      "job": "Sheriff",
+      "name": "Finn",
+      "job": "Baker",
       "status": "INNOCENT",
       "clue": {
         "type": "EXACTLY",
@@ -85,8 +85,8 @@
     },
     {
       "cell": "A3",
-      "name": "Greta",
-      "job": "Florist",
+      "name": "Gina",
+      "job": "Coder",
       "status": "INNOCENT",
       "clue": {
         "type": "EXACTLY",
@@ -99,8 +99,8 @@
     },
     {
       "cell": "B3",
-      "name": "Hector",
-      "job": "Mechanic",
+      "name": "Hugo",
+      "job": "Farmer",
       "status": "CRIMINAL",
       "clue": {
         "type": "EXACTLY",
@@ -113,8 +113,8 @@
     },
     {
       "cell": "C3",
-      "name": "Iris",
-      "job": "Teacher",
+      "name": "Ivy",
+      "job": "Singer",
       "status": "INNOCENT",
       "clue": {
         "type": "DIFFERENT",

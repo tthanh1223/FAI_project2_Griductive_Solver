@@ -4,8 +4,8 @@
   "cells": [
     {
       "cell": "A1",
-      "name": "Celia",
-      "job": "Detective",
+      "name": "Alice",
+      "job": "Cook",
       "status": "INNOCENT",
       "clue": {
         "type": "EXACTLY",
@@ -17,8 +17,8 @@
     },
     {
       "cell": "B1",
-      "name": "Eliza",
-      "job": "Baker",
+      "name": "Bob",
+      "job": "Nurse",
       "status": "CRIMINAL",
       "clue": {
         "type": "PARITY",
@@ -40,8 +40,8 @@
     },
     {
       "cell": "C1",
-      "name": "Elsa",
-      "job": "Clerk",
+      "name": "Cara",
+      "job": "Guard",
       "status": "INNOCENT",
       "clue": {
         "type": "AT_MOST",
@@ -54,8 +54,8 @@
     },
     {
       "cell": "A2",
-      "name": "Felix",
-      "job": "Guard",
+      "name": "Dan",
+      "job": "Pilot",
       "status": "INNOCENT",
       "clue": {
         "type": "EXACTLY",
@@ -78,8 +78,8 @@
     },
     {
       "cell": "B2",
-      "name": "Greta",
-      "job": "Pilot",
+      "name": "Eve",
+      "job": "Judge",
       "status": "INNOCENT",
       "clue": {
         "type": "EXACTLY",
@@ -92,8 +92,8 @@
     },
     {
       "cell": "C2",
-      "name": "Liam",
-      "job": "Painter",
+      "name": "Finn",
+      "job": "Baker",
       "status": "INNOCENT",
       "clue": {
         "type": "EXACTLY",
@@ -111,8 +111,8 @@
     },
     {
       "cell": "A3",
-      "name": "Mara",
-      "job": "Cook",
+      "name": "Gina",
+      "job": "Coder",
       "status": "INNOCENT",
       "clue": {
         "type": "NONE",
@@ -121,8 +121,8 @@
     },
     {
       "cell": "B3",
-      "name": "Noah",
-      "job": "Painter",
+      "name": "Hugo",
+      "job": "Farmer",
       "status": "CRIMINAL",
       "clue": {
         "type": "SAME",
@@ -132,8 +132,8 @@
     },
     {
       "cell": "C3",
-      "name": "Uma",
-      "job": "Astronaut",
+      "name": "Ivy",
+      "job": "Singer",
       "status": "INNOCENT",
       "clue": {
         "type": "SAME",
