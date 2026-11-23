@@ -88,6 +88,12 @@ Mọi ô clue nhắc tới hoặc đếm, để GUI tô sáng. `{"type":"SAME","
 Mọi lý do puzzle không hợp lệ, `[]` = hợp lệ. Hợp lệ = `GameEngine` nhận (clue đúng trên đáp án) + `check_unique` + agent giải hết không đoán (STUCK là không hợp lệ) + tên tăng dần theo alphabet theo row-major. Không sửa `puzzle`.
 Dòng lệnh: `python -m puzzles.validate puzzles/p3_01.json ...` (exit 1 nếu có file không hợp lệ). Dùng để kiểm puzzle chép tay.
 
+## puzzles/generate.py (Engine & Puzzle)
+
+### `generate(rows, cols, seed, index) -> dict`
+Puzzle số `index` (dict JSON, id `g3_01` hoặc `g4x5_01`), đã qua `puzzle_problems`, kèm `"difficulty": {"waves", "sat_calls"}` (`load_puzzle` bỏ qua key này). Cùng tham số → cùng puzzle.
+Dòng lệnh: `python -m puzzles.generate --rows 4 --cols 4 --count 6 --seed 0` ghi `puzzles/g4_01.json` …; file đã có thì bỏ qua, trừ khi thêm `--force`.
+
 ## encoder.py (Encoder)
 
 ### `VarMap(rows, cols)`
