@@ -53,6 +53,7 @@ python main.py puzzles/p4x5_candle.json
 | drag the divider between board and panels | | Bigger / smaller cards; the panels take the rest |
 | | `Esc` | Clear selection and highlight |
 
+When the last card is proved, a *Case closed* dialog sums up the game (steps, rejected verdicts, SAT calls) and offers *Next case*, *Levels*, *Play again*.
 Side panels: *Solver stats* (`agent.stats` + `build_kb` size), *Deduction trace* (one line per accepted move: cell → verdict, clues that were face-up, SAT calls of that move, clue revealed), and the status bar (IN PROGRESS / SOLVED / STUCK / INCONSISTENT).
 Code: `gui/app.py` (window, actions), `gui/widgets.py` (drawing), `gui/clue_text.py` (`clue_to_text`), `gui/theme.py` (colours, fonts); avatars in `assets/avatars/<name>_32.png` (a coloured initial is drawn when a name has no picture).
 

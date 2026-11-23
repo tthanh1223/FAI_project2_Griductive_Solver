@@ -98,6 +98,8 @@ class App:
         self._current_file = None    # absolute path of the loaded puzzle
         self.solved_files = set()    # puzzles solved in this session (✓ in the level menu)
         self._menu = None            # the level menu overlay while it is open
+        self._win = None             # the "case closed" dialog while it is open
+        self.mistakes = 0            # rejected verdicts (NOT_PROVABLE / CONTRADICTED) in this game
         self._resize_job = None
 
         root.title("Griductive Solver")
@@ -277,8 +279,10 @@ class App:
                 self.root.bind(f"<KeyPress-{key}>", lambda e, a=action: a())
 
     def _escape(self):
-        """Esc closes the level menu, otherwise clears selection and highlight."""
-        if self._menu is not None:
+        """Esc closes the win dialog or the level menu, otherwise clears selection and highlight."""
+        if self._win is not None:
+            self.hide_win()
+        elif self._menu is not None:
             if self.engine is not None:
                 self.hide_levels()
         else:
@@ -289,6 +293,7 @@ class App:
     def show_levels(self):
         """Cover the body with the level menu (a grid of puzzles grouped by size)."""
         self._stop_auto()
+        self.hide_win()
         self.hide_levels()
         t, f = self.t, self.fonts
         overlay = tk.Frame(self._body, bg=t["canvas"])
@@ -368,6 +373,53 @@ class App:
         if self._sash_x is not None:
             self._place_sash(self._sash_x)
 
+    # ================================================================ win dialog
+
+    def show_win(self):
+        """"Case closed" dialog in the middle of the window, once the puzzle is solved."""
+        self.hide_win()
+        state = self.state()
+        if state is None or not self._safe_is_solved():
+            return
+        t, f = self.t, self.fonts
+        box = RoundPanel(self._body, t, pad=22, radius=14, bg=t["canvas"])
+        box.place(relx=0.5, rely=0.45, anchor="center", width=500)
+        tk.Misc.tkraise(box)          # Canvas.lift() raises canvas items, not the widget
+        Tape(box.body, t, f, text="CASE CLOSED  •  ").pack(fill="x")
+        tk.Label(box.body, text="Puzzle solved!", font=f["title"], bg=t["panel"], fg=t["text"]).pack(anchor="w", pady=(16, 2))
+        total = state["rows"] * state["cols"]
+        tk.Label(box.body, text=f"All {total} people are judged in {len(self.trace)} steps, and every verdict "
+                                f"was proved from the revealed clues — no guessing.",
+                 font=f["body"], bg=t["panel"], fg=t["muted"], justify="left", wraplength=450).pack(anchor="w")
+        s = self.agent.stats
+        stats = StatsGrid(box.body, t, f, bg=t["panel"], rows=1)
+        stats.pack(fill="x", pady=(14, 16))
+        stats.set([(str(len(self.trace)), "Steps"), (str(self.mistakes), "Rejected verdicts"),
+                   (str(s["sat_calls"]), "SAT calls"), (f"{s['time']:.3f} s", "Solver time")])
+        buttons = tk.Frame(box.body, bg=t["panel"])
+        buttons.pack(fill="x")
+        nxt = self._next_level()
+        if nxt:
+            FlatButton(buttons, "Next case", lambda: self._pick_level(nxt), t, f, "primary",
+                       bg=t["panel"]).pack(side="left")
+        for label, command in (("Levels", self.show_levels), ("Play again", self.restart), ("Close", self.hide_win)):
+            FlatButton(buttons, label, command, t, f, "secondary", bg=t["panel"]).pack(side="left", padx=(10, 0))
+        self._win = box
+
+    def hide_win(self):
+        if self._win is not None:
+            self._win.destroy()
+            self._win = None
+
+    def _next_level(self):
+        """The next puzzle of the level menu that is not solved yet (in menu order), or None."""
+        files = [lv["file"] for _, levels in _scan_levels() for lv in levels]
+        if self._current_file in files:
+            i = files.index(self._current_file)
+            files = files[i + 1:] + files[:i]
+        unsolved = [file for file in files if file not in self.solved_files]
+        return (unsolved or files or [None])[0]
+
     # ================================================================ drawing
 
     def state(self):
@@ -418,7 +470,8 @@ class App:
         solved = len(state["verdicts"])
         total = state["rows"] * state["cols"]
         kb_text = f"KB: {kb['primary']} primary · {kb['aux']} aux · {kb['clauses']} clauses" if kb else "KB: —"
-        self.status.configure(text=f"Status: {self._status_word()}      Solved {solved} / {total}      {kb_text}")
+        self.status.configure(text=f"Status: {self._status_word()}      Solved {solved} / {total}      "
+                                   f"Rejected verdicts {self.mistakes}      {kb_text}")
 
     def _render_empty(self):
         """No game: empty board and neutral panels."""
@@ -555,6 +608,7 @@ class App:
             return False
         self._stop_auto()
         self.hide_levels()
+        self.hide_win()
         self.engine, self.agent = new_engine, new_agent
         self.puzzle_file = Path(path).name
         self._current_file = str(Path(path).resolve())
@@ -567,6 +621,7 @@ class App:
         if not self.engine or self._menu is not None:
             return
         self._stop_auto()
+        self.hide_win()
         try:
             self.engine.restart()
             self.agent.reset_stats()
@@ -579,17 +634,20 @@ class App:
     def _reset_play(self):
         self.selected, self.clue_focus, self.trace = None, [], []
         self.feedback, self.hint_text, self.end_status = _READY, None, None
+        self.mistakes = 0
 
     def toggle_theme(self):
         self.theme_name = "dark" if self.theme_name == "light" else "light"
-        sash, menu_open = self._sash_x, self._menu is not None
-        self._menu = None                      # destroyed with the old frame
+        sash, menu_open, win_open = self._sash_x, self._menu is not None, self._win is not None
+        self._menu = self._win = None          # destroyed with the old frame
         self.frame.destroy()
         self._build()
         self.render()
         self.root.after_idle(lambda: self._place_sash(sash))
         if menu_open:
             self.show_levels()
+        elif win_open:
+            self.show_win()
 
     def clear_selection(self):
         self.selected, self.clue_focus = None, []
@@ -649,13 +707,17 @@ class App:
                 self.feedback = ("ok", "ACCEPTED", f"{cell} ({name}) is {verdict}. The card is turned face-up "
                                                    "and its clue joins the knowledge base.")
         elif result == engine.NOT_PROVABLE:
+            self.mistakes += 1
             self.feedback = ("warn", "NOT_PROVABLE",
                              "Neither verdict is forced by the current clues. Card stays face-down.")
         else:
+            self.mistakes += 1
             other = INNOCENT if verdict == CRIMINAL else CRIMINAL
             self.feedback = ("error", "CONTRADICTED",
                              f"The revealed clues prove {cell} ({name}) is {other}. Card stays face-down.")
         self.render()
+        if result == engine.ACCEPTED and self._safe_is_solved():
+            self.root.after(250, self.show_win)       # let the last card turn first
         return result
 
     def hint(self):

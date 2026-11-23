@@ -293,10 +293,10 @@ class StatsGrid(tk.Canvas):
 
     COLS, TILE_H, GAP = 4, 46, 8
 
-    def __init__(self, master, theme, fonts, bg):
+    def __init__(self, master, theme, fonts, bg, rows=2):
         self.theme, self.fonts, self.items = theme, fonts, []
         super().__init__(master, bg=bg, highlightthickness=0, bd=0, width=10,
-                         height=2 * self.TILE_H + self.GAP)
+                         height=rows * self.TILE_H + (rows - 1) * self.GAP)
         self.bind("<Configure>", lambda e: self._draw())
 
     def set(self, items):
@@ -508,8 +508,8 @@ class LevelGrid(tk.Frame):
 class Tape(tk.Canvas):
     """Horizontal KEEP OUT tape across the window (26 px)."""
 
-    def __init__(self, master, theme, fonts):
-        self.theme, self.fonts = theme, fonts
+    def __init__(self, master, theme, fonts, text=_TAPE_TEXT):
+        self.theme, self.fonts, self.text = theme, fonts, text
         super().__init__(master, height=26, width=10, bg=theme["tape"], highlightthickness=0, bd=0)
         self.bind("<Configure>", lambda e: self._draw())
 
@@ -520,8 +520,8 @@ class Tape(tk.Canvas):
         self.create_rectangle(0, 0, w, h, fill=t["tape"], outline="")
         self.create_rectangle(0, 0, w, 2, fill=t["tape_ink"], outline="")
         self.create_rectangle(0, h - 2, w, h, fill=t["tape_ink"], outline="")
-        repeat = w // max(1, self.fonts["tape"].measure(_TAPE_TEXT)) + 2
-        self.create_text(12, h / 2, text=_TAPE_TEXT * repeat, anchor="w", fill=t["tape_ink"],
+        repeat = w // max(1, self.fonts["tape"].measure(self.text)) + 2
+        self.create_text(12, h / 2, text=self.text * repeat, anchor="w", fill=t["tape_ink"],
                          font=self.fonts["tape"])
 
 
