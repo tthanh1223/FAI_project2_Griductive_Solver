@@ -17,12 +17,36 @@ _TAPE_TEXT = "KEEP OUT  •  CRIME SCENE  •  DO NOT CROSS  •  "
 
 # ---------------------------------------------------------------- drawing helpers
 
-def _round_rect(canvas, x1, y1, x2, y2, r, **kw):
-    """Rounded rectangle as a smoothed polygon (Tk has no native rounded rectangle)."""
-    r = max(0, min(r, (x2 - x1) / 2, (y2 - y1) / 2))
-    pts = [x1 + r, y1, x2 - r, y1, x2, y1, x2, y1 + r, x2, y2 - r, x2, y2,
-           x2 - r, y2, x1 + r, y2, x1, y2, x1, y2 - r, x1, y1 + r, x1, y1]
-    return canvas.create_polygon(pts, smooth=True, **kw)
+def _round_rect(canvas, x1, y1, x2, y2, r, fill="", outline="", width=1, tags=(), dash=None):
+    """Rounded rectangle with straight, crisp edges (Tk has no native one).
+
+    Fill = 2 rectangles + 4 quarter discs; outline = 4 straight lines + 4 quarter arcs.
+    (A smoothed polygon is shorter to write, but Tk draws its edges wavy.)
+    """
+    r = max(0.0, min(r, (x2 - x1) / 2, (y2 - y1) / 2))
+    d = 2 * r
+    corners = ((x1, y1, 90), (x2 - d, y1, 0), (x1, y2 - d, 180), (x2 - d, y2 - d, 270))
+    if fill:
+        canvas.create_rectangle(x1 + r - 0.5, y1, x2 - r + 0.5, y2, fill=fill, outline="", tags=tags)
+        canvas.create_rectangle(x1, y1 + r - 0.5, x2, y2 - r + 0.5, fill=fill, outline="", tags=tags)
+        if r >= 1:
+            for ax, ay, start in corners:
+                canvas.create_arc(ax, ay, ax + d, ay + d, start=start, extent=90, style="pieslice",
+                                  fill=fill, outline="", tags=tags)
+    if outline and width:
+        line = {"fill": outline, "width": width, "tags": tags}
+        if dash:
+            line["dash"] = dash
+        canvas.create_line(x1 + r, y1, x2 - r, y1, **line)
+        canvas.create_line(x1 + r, y2, x2 - r, y2, **line)
+        canvas.create_line(x1, y1 + r, x1, y2 - r, **line)
+        canvas.create_line(x2, y1 + r, x2, y2 - r, **line)
+        if r >= 1:
+            arc = {"outline": outline, "width": width, "style": "arc", "tags": tags}
+            if dash:
+                arc["dash"] = dash
+            for ax, ay, start in corners:
+                canvas.create_arc(ax, ay, ax + d, ay + d, start=start, extent=90, **arc)
 
 
 def _mix(c1: str, c2: str, t: float) -> str:
@@ -135,7 +159,7 @@ class FlatButton(tk.Canvas):
         self.enabled, self.hover = True, False
         width = width or fonts["button"].measure(text) + 30
         super().__init__(master, width=width, height=height, bg=bg or theme["panel"],
-                         highlightthickness=0, bd=0, cursor="hand2")
+                         highlightthickness=0, bd=0)
         self.bind("<Configure>", lambda e: self._draw())
         self.bind("<Enter>", lambda e: self._set_hover(True))
         self.bind("<Leave>", lambda e: self._set_hover(False))
@@ -149,7 +173,6 @@ class FlatButton(tk.Canvas):
     def set_enabled(self, enabled: bool):
         if enabled != self.enabled:
             self.enabled = enabled
-            self.configure(cursor="hand2" if enabled else "arrow")
             self._draw()
 
     def _set_hover(self, value):
@@ -441,42 +464,45 @@ class BoardView(tk.Canvas):
         self.create_text(280, 220, text=detail, fill=t["muted"], font=f["body"], width=480, justify="center")
 
     def card_size(self, rows, cols, max_height):
-        """140 px up to 4 x 4, 116 px above; smaller only if the board would not fit max_height."""
-        size = 140 if rows <= 4 and cols <= 4 else 116
-        while size > 92 and self._height(rows, cols, size) > max_height:
-            size -= 4
-        return size
+        """(width, height) of a card: 140 px up to 4 columns, 116 px with 5;
+        the height shrinks (not the width) only if the board would not fit max_height."""
+        w = 140 if cols <= 4 else 116
+        h = 140 if rows <= 4 and cols <= 4 else 116
+        h = min(h, w)
+        while h > 92 and self._height(rows, cols, w, h) > max_height:
+            h -= 2
+        return w, h
 
-    def _height(self, rows, cols, size):
-        grid_w = self.LABEL_W + cols * size + (cols - 1) * self.GAP
-        return self.HEADER_H + rows * size + (rows - 1) * self.GAP + self.LEGEND_TOP + self._legend(0, grid_w, False)
+    def _height(self, rows, cols, w, h):
+        grid_w = self.LABEL_W + cols * w + (cols - 1) * self.GAP
+        return self.HEADER_H + rows * h + (rows - 1) * self.GAP + self.LEGEND_TOP + self._legend(0, grid_w, False)
 
     def draw(self, cells, rows, cols, texts, verdicts, selected, highlighted, max_height=10_000):
         """cells: public_state["cells"]; texts: {cell: clue sentence} of face-up cards."""
         t, f = self.theme, self.fonts
-        size = self.card_size(rows, cols, max_height)
-        grid_h = rows * size + (rows - 1) * self.GAP
-        width = self.LABEL_W + cols * size + (cols - 1) * self.GAP
+        w, h = self.card_size(rows, cols, max_height)
+        grid_h = rows * h + (rows - 1) * self.GAP
+        width = self.LABEL_W + cols * w + (cols - 1) * self.GAP
         self.delete("all")
 
         for c in range(cols):
-            x = self.LABEL_W + c * (size + self.GAP) + size / 2
+            x = self.LABEL_W + c * (w + self.GAP) + w / 2
             self.create_text(x, self.HEADER_H / 2, text=chr(ord("A") + c), fill=t["muted"], font=f["axis"])
         for r in range(rows):
-            y = self.HEADER_H + r * (size + self.GAP) + size / 2
+            y = self.HEADER_H + r * (h + self.GAP) + h / 2
             self.create_text(self.LABEL_W / 2 - 4, y, text=str(r + 1), fill=t["muted"], font=f["axis"])
 
         for i, info in enumerate(cells):
             r, c = divmod(i, cols)
-            x = self.LABEL_W + c * (size + self.GAP)
-            y = self.HEADER_H + r * (size + self.GAP)
-            self._card(info, x, y, size, verdicts.get(info["cell"]), texts.get(info["cell"]),
+            x = self.LABEL_W + c * (w + self.GAP)
+            y = self.HEADER_H + r * (h + self.GAP)
+            self._card(info, x, y, w, h, verdicts.get(info["cell"]), texts.get(info["cell"]),
                        info["cell"] == selected, info["cell"] in highlighted)
 
         legend_h = self._legend(self.HEADER_H + grid_h + self.LEGEND_TOP, width, True)
         self.configure(width=width, height=self.HEADER_H + grid_h + self.LEGEND_TOP + legend_h)
 
-    def _card(self, info, x, y, s, verdict, clue_text, is_selected, is_highlighted):
+    def _card(self, info, x, y, w, h, verdict, clue_text, is_selected, is_highlighted):
         t, f = self.theme, self.fonts
         cell, tag, pad = info["cell"], f"card:{info['cell']}", 10
         if verdict == CRIMINAL:
@@ -490,28 +516,28 @@ class BoardView(tk.Canvas):
         elif is_highlighted:
             border, bw = t["highlight"], 3
         inset = bw / 2
-        _round_rect(self, x + inset, y + inset, x + s - inset, y + s - inset, 10,
+        _round_rect(self, x + inset, y + inset, x + w - inset, y + h - inset, 10,
                     fill=fill, outline=border, width=bw, tags=tag)
 
         # header: avatar, name, cell id
         _draw_avatar(self, self.avatars, t, f, info["name"], x + pad, y + pad, 32, tags=tag)
         coord_w = f["card_coord"].measure(cell)
-        self.create_text(x + s - pad, y + pad + 16, text=cell, anchor="e", fill=t["muted"],
+        self.create_text(x + w - pad, y + pad + 16, text=cell, anchor="e", fill=t["muted"],
                          font=f["card_coord"], tags=tag)
-        left, right = x + pad + 32 + 6, x + s - pad - coord_w - 6
+        left, right = x + pad + 32 + 6, x + w - pad - coord_w - 6
         self.create_text((left + right) / 2, y + pad + 16,
                          text=_fit_text(info["name"], f["card_name"], right - left),
                          fill=t["text"], font=f["card_name"], tags=tag)
 
         # job line (left out on very small cards; the Verdict panel still shows it)
-        if s >= 140:
+        if h >= 140:
             job_y, badge_top = y + pad + 44, y + pad + 54
-        elif s >= 112:
+        elif h >= 112:
             job_y, badge_top = y + pad + 41, y + pad + 49
         else:
             job_y, badge_top = None, y + pad + 38
         if job_y is not None:
-            self.create_text(x + pad, job_y, text=_fit_text(info["job"], f["card_small"], s - 2 * pad),
+            self.create_text(x + pad, job_y, text=_fit_text(info["job"], f["card_small"], w - 2 * pad),
                              anchor="w", fill=t["muted"], font=f["card_small"], tags=tag)
 
         # badge: CRIMINAL / INNOCENT pill, or "?" while face-down
@@ -527,21 +553,19 @@ class BoardView(tk.Canvas):
             self.create_text(x + pad + 11, badge_top + 9, text="?", fill=t["muted"], font=f["badge"], tags=tag)
 
         # clue box: a lighter blend of the card colour
-        box_top, box_bottom = badge_top + 18 + 6, y + s - pad
+        box_top, box_bottom = badge_top + 18 + 6, y + h - pad
         box_fill = _mix(fill, t["panel"], 0.5 if verdict is None else 0.8)
-        _round_rect(self, x + pad, box_top, x + s - pad, box_bottom, 6, fill=box_fill, outline="", tags=tag)
+        _round_rect(self, x + pad, box_top, x + w - pad, box_bottom, 6, fill=box_fill, outline="", tags=tag)
         line_h = f["clue"].metrics("linespace")
         max_lines = max(1, int((box_bottom - box_top - 8) // line_h))
         if clue_text is None:
             self.create_text(x + pad + 8, box_top + 5, text="Clue hidden", anchor="nw", fill=t["muted"],
                              font=f["clue"], tags=tag)
         else:
-            lines = _wrap_text(clue_text, f["clue"], s - 2 * pad - 16, max_lines)
+            lines = _wrap_text(clue_text, f["clue"], w - 2 * pad - 16, max_lines)
             self.create_text(x + pad + 8, box_top + 5, text="\n".join(lines), anchor="nw", fill=t["text"],
                              font=f["clue"], tags=tag)
         self.tag_bind(tag, "<Button-1>", lambda e, cell=cell: self.on_click(cell))
-        self.tag_bind(tag, "<Enter>", lambda e: self.configure(cursor="hand2"))
-        self.tag_bind(tag, "<Leave>", lambda e: self.configure(cursor=""))
 
     def _legend(self, top, width, draw):
         """Colour legend in one or more lines (wraps to `width`); returns its height."""
