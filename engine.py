@@ -57,6 +57,8 @@ class GameEngine:
                 raise ValueError(f"Clue of {cell}: {e}") from None
             if not evaluate_clue(clue, solution, rows, cols):
                 raise ValueError(f"Clue of {cell} is false on the hidden solution")
+        self._revealed: dict[str, dict] = {}      # face-up clues; filled by restart()
+        self._verdicts: dict[str, str] = {}       # proved statuses; filled by restart()
         self.restart()
 
     def restart(self) -> None:
