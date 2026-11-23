@@ -231,33 +231,45 @@ def _to_puzzle(puzzle_id: str, data: dict) -> Puzzle:
 
 def difficulty(puzzle: Puzzle) -> dict:
     """{"waves", "sat_calls"}: reveal waves (flip every forced card at once, repeat)
-    and SAT calls of a standard LogicAgent.solve. Fewer cells per wave = harder."""
+    and SAT calls of a standard LogicAgent.solve. Fewer cells per wave = harder.
+
+    Raises ValueError if the puzzle cannot be solved without guessing.
+    """
     engine = GameEngine(puzzle, LogicAgent())
-    sat_calls = engine.agent.solve(engine)["stats"]["sat_calls"]
+    result = engine.agent.solve(engine)
+    if result["status"] != "SOLVED":
+        raise ValueError(f"Puzzle {puzzle.id} cannot be solved without guessing ({result['status']})")
     engine.restart()
     waves = 0
     while not engine.is_solved():
-        result = engine.agent.classify(engine.public_state())
-        for cell, verdict in result.items():
-            if verdict != UNKNOWN:
-                engine.submit(cell, verdict)
+        forced = {cell: verdict for cell, verdict in engine.agent.classify(engine.public_state()).items()
+                  if verdict != UNKNOWN}
+        for cell, verdict in forced.items():
+            engine.submit(cell, verdict)
         waves += 1
-    return {"waves": waves, "sat_calls": sat_calls}
+    return {"waves": waves, "sat_calls": result["stats"]["sat_calls"]}
 
 
 def puzzle_id(rows: int, cols: int, index: int) -> str:
-    """g3_01 for 3x3, g4x5_01 for 4 rows x 5 cols."""
-    size = f"{rows}" if rows == cols else f"{rows}x{cols}"
+    """g3_01 for 3x3; g5x4_01 for 5 cols x 4 rows (width x height, as in p4x5_candle)."""
+    size = f"{rows}" if rows == cols else f"{cols}x{rows}"
     return f"g{size}_{index:02d}"
+
+
+def check_size(rows: int, cols: int) -> None:
+    """Raises ValueError unless 2 <= rows, 2 <= cols <= 26 and there are enough names."""
+    if not (2 <= rows and 2 <= cols <= 26 and rows * cols <= len(NAMES)):
+        raise ValueError(f"Unsupported size: {rows} rows x {cols} cols "
+                         f"(need rows, cols >= 2, cols <= 26, rows * cols <= {len(NAMES)})")
 
 
 def generate(rows: int, cols: int, seed: int, index: int) -> dict:
     """Puzzle number `index` for this size and seed, as a JSON-ready dict.
 
-    Same arguments -> same puzzle. Raises RuntimeError after ATTEMPTS failed attempts.
+    Same arguments -> same puzzle. Raises ValueError for an unsupported size and
+    RuntimeError after ATTEMPTS failed attempts.
     """
-    if not (2 <= rows and 2 <= cols <= 26 and rows * cols <= len(NAMES)):
-        raise ValueError(f"Unsupported size {rows}x{cols}")
+    check_size(rows, cols)
     rng = random.Random(f"{seed}:{rows}x{cols}:{index}")
     agent = LogicAgent()
     pid = puzzle_id(rows, cols, index)
@@ -288,6 +300,14 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--out", type=Path, default=Path(__file__).resolve().parent)
     parser.add_argument("--force", action="store_true", help="overwrite existing files")
     args = parser.parse_args(argv)
+    try:
+        check_size(args.rows, args.cols)
+    except ValueError as e:
+        parser.error(str(e))
+    if args.count < 1 or args.start < 1:
+        parser.error("--count and --start must be at least 1")
+    if not args.out.is_dir():
+        parser.error(f"--out: not a directory: {args.out}")
 
     for index in range(args.start, args.start + args.count):
         path = args.out / f"{puzzle_id(args.rows, args.cols, index)}.json"

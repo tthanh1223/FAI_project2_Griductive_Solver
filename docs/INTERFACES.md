@@ -91,7 +91,7 @@ Dòng lệnh: `python -m puzzles.validate puzzles/p3_01.json ...` (exit 1 nếu 
 ## puzzles/generate.py (Engine & Puzzle)
 
 ### `generate(rows, cols, seed, index) -> dict`
-Puzzle số `index` (dict JSON, id `g3_01` hoặc `g4x5_01`), đã qua `puzzle_problems`, kèm `"difficulty": {"waves", "sat_calls"}` (`load_puzzle` bỏ qua key này). Cùng tham số → cùng puzzle.
+Puzzle số `index` (dict JSON, id `g3_01`; lưới chữ nhật ghi cột × hàng như `p4x5_candle`: 5 cột × 4 hàng → `g5x4_01`), đã qua `puzzle_problems`, kèm `"difficulty": {"waves", "sat_calls"}` (`load_puzzle` bỏ qua key này). Cùng tham số → cùng puzzle.
 Dòng lệnh: `python -m puzzles.generate --rows 4 --cols 4 --count 6 --seed 0` ghi `puzzles/g4_01.json` …; file đã có thì bỏ qua, trừ khi thêm `--force`.
 
 ## encoder.py (Encoder)

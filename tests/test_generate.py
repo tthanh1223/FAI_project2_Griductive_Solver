@@ -1,13 +1,19 @@
 """Tests for puzzles/generate.py: validity, determinism, clue quality, command line."""
+import os
 import random
+import subprocess
+import sys
+from pathlib import Path
 
 import pytest
 
 from encoder import VarMap, encode_clue, evaluate_clue
-from model import all_cells, load_puzzle
-from puzzles.generate import (_to_puzzle, generate, is_useful_clue, main, puzzle_id,
+from model import CRIMINAL, INNOCENT, Cell, Puzzle, all_cells, load_puzzle
+from puzzles.generate import (_to_puzzle, difficulty, generate, is_useful_clue, main, puzzle_id,
                               random_clue, to_json)
 from puzzles.validate import puzzle_problems
+
+ROOT = Path(__file__).resolve().parents[1]
 
 SEED = 0
 N3 = 50
@@ -30,8 +36,9 @@ def test_generated_clues_are_useful_and_one_flavour_card(puzzles_3x3):
         assert len(flavour) == 1, data["id"]                 # only the last flipped card
         assert flavour[0]["cell"] not in data["revealed"]
         for c in data["cells"]:
-            if c["clue"]["type"] != "NONE":
-                assert is_useful_clue(c["clue"], answer, 3, 3), (data["id"], c)
+            if c["clue"]["type"] != "NONE":                  # true, and not always true
+                assert evaluate_clue(c["clue"], answer, 3, 3), (data["id"], c)
+                assert encode_clue(c["clue"], VarMap(3, 3)), (data["id"], c)
 
 
 def test_generated_set_is_varied(puzzles_3x3):
@@ -59,9 +66,29 @@ def test_same_arguments_same_bytes():
     assert generate(3, 3, 7, 2) != generate(3, 3, 8, 2)
 
 
+def test_same_bytes_across_processes_and_hash_seeds():
+    """String hashing (set / dict order) changes per process: output must not depend on it."""
+    code = ("import sys; sys.path.insert(0, '.'); from puzzles.generate import generate, to_json; "
+            "sys.stdout.buffer.write(to_json(generate(4, 4, 3, 1)).encode('utf-8'))")
+    outputs = {subprocess.run([sys.executable, "-c", code], cwd=ROOT, capture_output=True, check=True,
+                              env={**os.environ, "PYTHONHASHSEED": seed}).stdout
+               for seed in ("1", "2", "3")}
+    assert outputs == {to_json(generate(4, 4, 3, 1)).encode("utf-8")}
+
+
 def test_puzzle_ids():
     assert puzzle_id(3, 3, 1) == "g3_01"
-    assert puzzle_id(4, 5, 12) == "g4x5_12"
+    assert puzzle_id(4, 5, 12) == "g5x4_12"            # 5 cols x 4 rows, like p4x5_candle (4 cols x 5 rows)
+    assert puzzle_id(5, 4, 1) == "g4x5_01"
+
+
+def test_difficulty_rejects_puzzle_that_needs_guessing():
+    cells = [Cell(c, n, "Cook", s, {"type": "NONE", "text": "-"})
+             for c, n, s in zip(all_cells(2, 2), ["Ann", "Bob", "Cid", "Dee"],
+                                [INNOCENT, CRIMINAL, INNOCENT, INNOCENT])]
+    cells[3].clue = {"type": "FACT", "who": "B1", "status": CRIMINAL}
+    with pytest.raises(ValueError, match="without guessing"):
+        difficulty(Puzzle("stuck", 2, 2, cells, ["A1"]))
 
 
 @pytest.mark.parametrize("rows, cols", [(1, 3), (3, 1), (7, 7), (2, 27)])
@@ -122,3 +149,15 @@ def test_main_writes_skips_and_overwrites(tmp_path, capsys):
     assert "skip g3_01.json" in capsys.readouterr().out
     main(args + ["--force"])
     assert load_puzzle(files[0]).id == "g3_01"
+
+
+@pytest.mark.parametrize("extra", [
+    ["--rows", "1", "--cols", "3"], ["--rows", "3", "--cols", "27"], ["--rows", "7", "--cols", "7"],
+    ["--rows", "3", "--cols", "3", "--count", "0"], ["--rows", "3", "--cols", "3", "--start", "-1"],
+    ["--rows", "3", "--cols", "3", "--out", "no/such/dir"],
+])
+def test_main_rejects_bad_arguments(extra, tmp_path, capsys):
+    with pytest.raises(SystemExit) as e:
+        main(extra if "--out" in extra else extra + ["--out", str(tmp_path)])
+    assert e.value.code == 2 and "error:" in capsys.readouterr().err
+    assert not list(tmp_path.glob("*.json"))
