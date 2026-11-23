@@ -4,8 +4,8 @@
   "cells": [
     {
       "cell": "A1",
-      "name": "Derek",
-      "job": "Astronaut",
+      "name": "Alice",
+      "job": "Cook",
       "status": "CRIMINAL",
       "clue": {
         "type": "AND",
@@ -30,8 +30,8 @@
     },
     {
       "cell": "B1",
-      "name": "Eliza",
-      "job": "Astronaut",
+      "name": "Bob",
+      "job": "Nurse",
       "status": "INNOCENT",
       "clue": {
         "type": "NONE",
@@ -40,7 +40,7 @@
     },
     {
       "cell": "C1",
-      "name": "Elsa",
+      "name": "Cara",
       "job": "Guard",
       "status": "INNOCENT",
       "clue": {
@@ -51,8 +51,8 @@
     },
     {
       "cell": "A2",
-      "name": "Mona",
-      "job": "Detective",
+      "name": "Dan",
+      "job": "Pilot",
       "status": "CRIMINAL",
       "clue": {
         "type": "EXACTLY",
@@ -75,8 +75,8 @@
     },
     {
       "cell": "B2",
-      "name": "Owen",
-      "job": "Painter",
+      "name": "Eve",
+      "job": "Judge",
       "status": "INNOCENT",
       "clue": {
         "type": "COMPARE",
@@ -93,8 +93,8 @@
     },
     {
       "cell": "C2",
-      "name": "Roy",
-      "job": "Painter",
+      "name": "Finn",
+      "job": "Baker",
       "status": "INNOCENT",
       "clue": {
         "type": "EXACTLY",
@@ -107,8 +107,8 @@
     },
     {
       "cell": "A3",
-      "name": "Sophia",
-      "job": "Clerk",
+      "name": "Gina",
+      "job": "Coder",
       "status": "INNOCENT",
       "clue": {
         "type": "DIFFERENT",
@@ -118,8 +118,8 @@
     },
     {
       "cell": "B3",
-      "name": "Uma",
-      "job": "Doctor",
+      "name": "Hugo",
+      "job": "Farmer",
       "status": "CRIMINAL",
       "clue": {
         "type": "SAME",
@@ -129,8 +129,8 @@
     },
     {
       "cell": "C3",
-      "name": "Wendy",
-      "job": "Astronaut",
+      "name": "Ivy",
+      "job": "Singer",
       "status": "CRIMINAL",
       "clue": {
         "type": "SAME",
