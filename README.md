@@ -23,7 +23,7 @@ Python 3.10+. Tkinter ships with Python.
 | `encoder.py` | Clue → CNF, direct clue evaluator, KB builder | Encoder |
 | `dpll.py` | DPLL SAT solver + stats | DPLL & Agent |
 | `agent.py` | LogicAgent: classify, deduction loop, trace, hint, uniqueness | DPLL & Agent |
-| `gui/app.py` | Tkinter GUI | GUI & Video |
+| `gui/` | Tkinter GUI (`app.py`, `widgets.py`, `clue_text.py`, `theme.py`) | GUI & Video |
 | `experiments/run.py` | Benchmark over all puzzles | Lead |
 | `puzzles/*.json` | Puzzle set (+ generator) | Engine & Puzzle |
 | `tests/` | pytest | everyone |
@@ -31,6 +31,29 @@ Python 3.10+. Tkinter ships with Python.
 **Input / output of every function: [docs/INTERFACES.md](docs/INTERFACES.md).** Run `python -m pytest`: contract tests skip until a function is implemented, then check it.
 
 **Rule:** only `GameEngine` reads hidden statuses and face-down clues. Agent, Hint and GUI use `engine.public_state()` only.
+
+## GUI
+
+```bash
+python main.py                        # empty window, then Load
+python main.py puzzles/p4x5_candle.json
+```
+
+| Control | Key | What it does |
+|---|---|---|
+| Load | | Pick a puzzle JSON in `puzzles/` |
+| Restart | | Back to the start of the puzzle; stats and trace reset |
+| click a face-down card | | Select it (purple border) |
+| CRIMINAL / INNOCENT | `C` / `I` | `engine.submit`: ACCEPTED turns the card face-up; NOT_PROVABLE / CONTRADICTED leave it face-down and explain why |
+| click a face-up card or a row of *Revealed clues* | | Highlight the cells that clue talks about (`cells_in_clue`) |
+| Hint | `H` | A card the clues prove now, and the clues to read (`agent.hint`) |
+| Step | `Space` | One move of the agent (`agent.next_move` + `submit`) |
+| Auto Solve / Stop | | Steps every 400 ms until SOLVED or STUCK; click again to stop |
+| Theme | | Light / dark |
+| | `Esc` | Clear selection and highlight |
+
+Side panels: *Solver stats* (`agent.stats` + `build_kb` size), *Deduction trace* (one line per accepted move: cell → verdict, clues that were face-up, SAT calls of that move, clue revealed), and the status bar (IN PROGRESS / SOLVED / STUCK / INCONSISTENT).
+Code: `gui/app.py` (window, actions), `gui/widgets.py` (drawing), `gui/clue_text.py` (`clue_to_text`), `gui/theme.py` (colours, fonts); avatars in `assets/avatars/<name>_32.png` (a coloured initial is drawn when a name has no picture).
 
 ## Puzzle format
 
