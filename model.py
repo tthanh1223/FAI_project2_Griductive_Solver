@@ -19,6 +19,14 @@ _MAX_COLS = 26                                   # columns are single letters A.
 _CELL_RE = re.compile(r"([A-Z])([1-9][0-9]*)")   # "A1", "C12"; not "a1", "A0", "AA1"
 _CELL_FIELDS = ("cell", "name", "job", "status", "clue")
 
+# Region kind -> required fields besides "kind" (no other field is allowed).
+_REGION_FIELDS = {
+    "row": {"row"}, "col": {"col"}, "neighbors": {"of"}, "cells": {"cells"},
+    "all": set(), "edges": set(), "corners": set(),
+    "above": {"of"}, "below": {"of"}, "left": {"of"}, "right": {"of"},
+    "between": {"a", "b"}, "inter": {"regions"},
+}
+
 
 @dataclass
 class Cell:
@@ -76,12 +84,27 @@ def all_cells(rows: int, cols: int) -> list[str]:
 
 
 def region_cells(region: dict, rows: int, cols: int) -> list[str]:
-    """Cells of a region, in row-major order.
+    """Cells of a region, in row-major order, without duplicates.
 
     Core kinds: row, col, neighbors (up to 8 around, excluding the cell itself), cells.
     Extension kinds: all, edges, corners, above / below / left / right, between, inter.
+    Exact definitions: docs/CLUES.md section 2. Examples on a 3x3 grid:
+        {"kind": "row", "row": 2}             -> ["A2", "B2", "C2"]
+        {"kind": "neighbors", "of": "A1"}     -> ["B1", "A2", "B2"]
+        {"kind": "above", "of": "B3"}         -> ["B1", "B2"]
+        {"kind": "between", "a": "A1", "b": "C1"} -> ["B1"]
+
+    Empty regions are valid (above a row-1 cell, between two adjacent cells, an
+    empty intersection). On degenerate grids "corners" is the set of corner
+    positions without repeats (1x3 -> A1, C1; 1x1 -> A1) and "edges" is the
+    whole grid when rows or cols < 3.
+
+    Raises ValueError on an unknown kind, a missing / extra / ill-typed field, a
+    cell outside the grid, a duplicate in "cells", "between" cells that are equal
+    or not on one row / column, or "inter" with fewer than 2 regions.
     """
-    raise NotImplementedError
+    _check_size(rows, cols)
+    return [_cell_id(r, c) for r, c in sorted(_region_positions(region, rows, cols))]
 
 
 def cells_in_clue(clue: dict, rows: int, cols: int) -> list[str]:
@@ -120,6 +143,71 @@ def _parse_cell(cell, rows: int, cols: int) -> tuple[int, int]:
     if not (r < rows and c < cols):
         raise ValueError(f"Cell {cell} is outside the {rows}x{cols} grid")
     return r, c
+
+
+def _region_positions(region, rows: int, cols: int) -> set[tuple[int, int]]:
+    """(row, col) positions (0-based) of a region; see region_cells."""
+    if not isinstance(region, dict):
+        raise ValueError(f"A region must be an object, got {region!r}")
+    kind = region.get("kind")
+    if kind not in _REGION_FIELDS:
+        raise ValueError(f"Unknown region kind: {kind!r}")
+    if region.keys() != _REGION_FIELDS[kind] | {"kind"}:
+        raise ValueError(f"Region {kind!r} needs exactly the fields {sorted(_REGION_FIELDS[kind])}, "
+                         f"got {sorted(region.keys() - {'kind'})}")
+    grid = {(r, c) for r in range(rows) for c in range(cols)}
+
+    if kind == "row":
+        row = region["row"]
+        if not (_is_int(row) and 1 <= row <= rows):
+            raise ValueError(f"Row must be an int in [1, {rows}], got {row!r}")
+        return {(row - 1, c) for c in range(cols)}
+    if kind == "col":
+        col = region["col"]
+        if not (isinstance(col, str) and len(col) == 1 and "A" <= col < chr(ord("A") + cols)):
+            raise ValueError(f"Column must be a letter in A..{chr(ord('A') + cols - 1)}, got {col!r}")
+        return {(r, ord(col) - ord("A")) for r in range(rows)}
+    if kind == "cells":
+        cells = region["cells"]
+        if not isinstance(cells, list):
+            raise ValueError('"cells" must be a list of cell ids')
+        positions = [_parse_cell(cell, rows, cols) for cell in cells]
+        if len(set(positions)) != len(positions):
+            raise ValueError(f"Duplicate cell ids in {cells}")
+        return set(positions)
+    if kind == "all":
+        return grid
+    if kind == "edges":
+        return {(r, c) for r, c in grid if r in (0, rows - 1) or c in (0, cols - 1)}
+    if kind == "corners":
+        return {(r, c) for r in (0, rows - 1) for c in (0, cols - 1)}
+    if kind == "inter":
+        parts = region["regions"]
+        if not isinstance(parts, list) or len(parts) < 2:
+            raise ValueError('"inter" needs a list of at least 2 regions')
+        return set.intersection(*(_region_positions(part, rows, cols) for part in parts))
+
+    if kind == "between":
+        (ra, ca), (rb, cb) = _parse_cell(region["a"], rows, cols), _parse_cell(region["b"], rows, cols)
+        if (ra, ca) == (rb, cb):
+            raise ValueError(f"'between' needs two different cells, got {region['a']} twice")
+        if ra == rb:
+            return {(ra, c) for c in range(min(ca, cb) + 1, max(ca, cb))}
+        if ca == cb:
+            return {(r, ca) for r in range(min(ra, rb) + 1, max(ra, rb))}
+        raise ValueError(f"'between' cells {region['a']} and {region['b']} are not on one row or column")
+
+    r, c = _parse_cell(region["of"], rows, cols)      # neighbors, above, below, left, right
+    if kind == "neighbors":
+        return {(r + dr, c + dc) for dr in (-1, 0, 1) for dc in (-1, 0, 1)
+                if (dr, dc) != (0, 0) and (r + dr, c + dc) in grid}
+    if kind == "above":
+        return {(i, c) for i in range(r)}
+    if kind == "below":
+        return {(i, c) for i in range(r + 1, rows)}
+    if kind == "left":
+        return {(r, j) for j in range(c)}
+    return {(r, j) for j in range(c + 1, cols)}      # right
 
 
 def _grid_size(data: dict) -> tuple[int, int]:
