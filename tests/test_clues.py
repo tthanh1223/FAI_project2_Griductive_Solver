@@ -8,9 +8,6 @@ import random
 
 import pytest
 
-from encoder import encode_count
-
-
 
 def call(fn, *args, **kwargs):
     try:
@@ -148,11 +145,12 @@ def test_validate_rejects(clue):
     except ValueError:
         return
     pytest.fail(f"accepted invalid clue {clue}")
-    
+
+
 @pytest.mark.parametrize("n", [5, 6])
 @pytest.mark.parametrize("kind", ["AT_MOST", "AT_LEAST", "EXACTLY"])
 def test_sequential_counter_matches_combinations(n, kind):
-    from encoder import VarMap, encode_count
+    from encoder import VarMap, _encode_count
     from dpll import dpll_solve
 
     for k in range(n + 1):
@@ -161,8 +159,8 @@ def test_sequential_counter_matches_combinations(n, kind):
 
         # Mixed signs also exercise counting negated literals.
         lits = [i if i % 2 else -i for i in range(1, n + 1)]
-        direct = encode_count(kind, lits, k, direct_vm, limit=2000)
-        sequential = encode_count(kind, lits, k, seq_vm, limit=0)
+        direct = _encode_count(kind, lits, k, direct_vm, limit=2000)
+        sequential = _encode_count(kind, lits, k, seq_vm, limit=0)
 
         if 0 < k < n:
             assert seq_vm.next_aux > n + 1
@@ -189,17 +187,18 @@ def test_sequential_counter_matches_combinations(n, kind):
                 dpll_solve, sequential, seq_vm.next_aux - 1, fixed
             )
             assert sat_direct == sat_seq == expected, (kind, n, k, bits)
-            
+
+
 @pytest.mark.parametrize("kind", ["AT_MOST", "AT_LEAST", "EXACTLY"])
 @pytest.mark.parametrize("innocent", [False, True])
 def test_basic_counts_on_512_boards(kind, innocent):
-    from encoder import VarMap, encode_count
+    from encoder import VarMap, _encode_count
 
     for k in range(4):
         vm = VarMap(3, 3)
         column = [vm.var(cell) for cell in ("A1", "A2", "A3")]
         lits = [-x for x in column] if innocent else column
-        cnf = encode_count(kind, lits, k, vm)
+        cnf = _encode_count(kind, lits, k, vm)
 
         for bits in itertools.product((False, True), repeat=9):
             total = sum(bits[x - 1] == (not innocent) for x in column)
@@ -213,3 +212,18 @@ def test_basic_counts_on_512_boards(kind, innocent):
                 for clause in cnf
             )
             assert actual == expected, (kind, innocent, k, bits)
+
+
+# Spec reference counts (CLUES.md 7.1): the truth-table encodings must not change.
+SPEC_CLAUSES_4x5 = {"D1": 48, "B2": 12, "C2": 13, "C3": 2, "A4": 91,
+                    "B4": 5, "D4": 9, "A5": 2, "B5": 4, "C5": 60}
+
+
+@pytest.mark.parametrize("cell", list(CLUES_4x5))
+def test_clause_counts_match_spec(cell):
+    from encoder import VarMap, encode_clue
+    vm = VarMap(5, 4)
+    cnf = call(encode_clue, CLUES_4x5[cell], vm)
+    assert len(cnf) == SPEC_CLAUSES_4x5[cell]
+    assert vm.next_aux - 1 - 20 == (5 if cell == "A4" else 0)
+
