@@ -410,6 +410,99 @@ class Divider(tk.Canvas):
         _round_rect(self, cx - 3, h / 2 - 24, cx + 3, h / 2 + 24, 3, fill=colour)
 
 
+# ---------------------------------------------------------------- level menu
+
+class LevelGrid(tk.Frame):
+    """Scrollable grid of puzzle tiles, grouped by board size. Click a tile to play it.
+
+    groups = [(title, [level, ...])], level = {"id", "file", "rows", "cols", "stars", "label"}.
+    """
+
+    TILE_W, TILE_H, GAP = 176, 108, 12
+
+    def __init__(self, master, theme, fonts, groups, on_pick, current=None, solved=()):
+        self.theme, self.fonts, self.groups, self.on_pick = theme, fonts, groups, on_pick
+        self.current, self.solved = current, set(solved)
+        super().__init__(master, bg=theme["panel"])
+        self.canvas = tk.Canvas(self, bg=theme["panel"], highlightthickness=0, bd=0, width=10, height=10)
+        self.scroll = tk.Scrollbar(self, orient="vertical", command=self.canvas.yview)
+        self.canvas.configure(yscrollcommand=self.scroll.set)
+        self.canvas.pack(side="left", fill="both", expand=True)
+        self.canvas.bind("<Configure>", lambda e: self._draw())
+        _bind_wheel(self.canvas)
+
+    def _draw(self):
+        t, f, c = self.theme, self.fonts, self.canvas
+        w = c.winfo_width()
+        if w <= 1:
+            return
+        c.delete("all")
+        per_row = max(1, (w + self.GAP) // (self.TILE_W + self.GAP))
+        y = 0
+        for title, levels in self.groups:
+            c.create_text(0, y + 10, text=title, anchor="w", fill=t["text"], font=f["panel_title"])
+            c.create_text(f["panel_title"].measure(title) + 10, y + 11, anchor="w", fill=t["muted"], font=f["body"],
+                          text=f"{len(levels)} case" + ("s" if len(levels) != 1 else ""))
+            y += 30
+            for i, level in enumerate(levels):
+                x = (i % per_row) * (self.TILE_W + self.GAP)
+                ty = y + (i // per_row) * (self.TILE_H + self.GAP)
+                self._tile(level, x, ty)
+            y += ((len(levels) + per_row - 1) // per_row) * (self.TILE_H + self.GAP) + 14
+        content_h = max(0, y - 14)
+        c.configure(scrollregion=(0, 0, w, content_h))
+        if content_h > c.winfo_height():
+            if not self.scroll.winfo_ismapped():
+                self.scroll.pack(side="right", fill="y")
+        elif self.scroll.winfo_ismapped():
+            self.scroll.pack_forget()
+
+    def _tile(self, level, x, y):
+        t, f, c = self.theme, self.fonts, self.canvas
+        tag = f"level:{level['file']}"
+        playing = level["file"] == self.current
+        outline, width = (t["selected"], 3) if playing else (t["facedown_border"], 1.5)
+        x1, y1, x2, y2 = x + width / 2, y + width / 2, x + self.TILE_W - width / 2, y + self.TILE_H - width / 2
+        _round_rect(c, x1, y1, x2, y2, 10, fill=t["facedown"], tags=tag)
+        _round_rect(c, x1, y1, x2, y2, 10, outline=outline, width=width, tags=(tag, tag + ":outline"))
+
+        # mini board: one small square per cell
+        rows, cols = level["rows"], level["cols"]
+        cell, gap = 7, 2
+        gx = x + self.TILE_W - 12 - cols * cell - (cols - 1) * gap
+        for r in range(rows):
+            for col in range(cols):
+                cx, cy = gx + col * (cell + gap), y + 12 + r * (cell + gap)
+                c.create_rectangle(cx, cy, cx + cell, cy + cell, fill=t["panel"], outline=t["facedown_border"], tags=tag)
+
+        c.create_text(x + 14, y + 22, text=level["id"], anchor="w", fill=t["text"], font=f["card_name"], tags=tag)
+        c.create_text(x + 14, y + 42, text=f"{cols} × {rows}", anchor="w", fill=t["muted"], font=f["card_small"], tags=tag)
+        if level["stars"]:
+            stars = "★" * level["stars"] + "☆" * (3 - level["stars"])
+            c.create_text(x + 14, y + 66, text=stars, anchor="w", fill=t["highlight"], font=f["body_bold"], tags=tag)
+            c.create_text(x + 14 + f["body_bold"].measure(stars) + 8, y + 66, text=level["label"], anchor="w",
+                          fill=t["muted"], font=f["card_small"], tags=tag)
+        else:
+            c.create_text(x + 14, y + 66, text=level["label"], anchor="w", fill=t["muted"], font=f["card_small"], tags=tag)
+
+        badge = "PLAYING" if playing else ("✓ SOLVED" if level["file"] in self.solved else None)
+        if badge:
+            colour = t["selected"] if playing else t["innocent"]
+            bw = f["badge"].measure(badge) + 18
+            _round_rect(c, x + 14, y + self.TILE_H - 30, x + 14 + bw, y + self.TILE_H - 12, 9, fill=colour, tags=tag)
+            c.create_text(x + 14 + bw / 2, y + self.TILE_H - 21, text=badge, fill=t["on_accent"], font=f["badge"], tags=tag)
+
+        c.tag_bind(tag, "<Button-1>", lambda e, file=level["file"]: self.on_pick(file))
+        if not playing:      # hover: only recolour this tile's border (redrawing would flicker)
+            c.tag_bind(tag, "<Enter>", lambda e: self._outline(tag, t["muted"]))
+            c.tag_bind(tag, "<Leave>", lambda e: self._outline(tag, t["facedown_border"]))
+
+    def _outline(self, tag, colour):
+        for item in self.canvas.find_withtag(tag + ":outline"):
+            option = "fill" if self.canvas.type(item) == "line" else "outline"
+            self.canvas.itemconfigure(item, **{option: colour})
+
+
 # ---------------------------------------------------------------- crime-scene tape
 
 class Tape(tk.Canvas):

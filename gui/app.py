@@ -10,6 +10,7 @@ Files:  app.py (this: App + run), clue_text.py (clue_to_text), theme.py (colours
 fonts), widgets.py (drawing pieces). Keys: C criminal, I innocent, H hint,
 Space step, Esc clear selection / highlight.
 """
+import json
 import tkinter as tk
 from pathlib import Path
 from tkinter import filedialog, messagebox
@@ -17,7 +18,7 @@ from tkinter import filedialog, messagebox
 from gui.clue_text import clue_to_text
 from gui.theme import THEMES, make_fonts
 from gui.widgets import (AvatarCache, Banner, BoardView, ClueList, CrossedTapes, Divider, FlatButton,
-                         RoundPanel, StatsGrid, Tape)
+                         LevelGrid, RoundPanel, StatsGrid, Tape)
 from model import CRIMINAL, INNOCENT
 
 __all__ = ["run", "clue_to_text"]
@@ -27,6 +28,41 @@ _AUTO_DELAY_MS = 400
 _READY = ("info", "Ready", "Select a face-down card, then choose CRIMINAL or INNOCENT.")
 _SIDE_PAD, _SIDE_GAP = 14, 12        # padding inside / gap between the right-hand panels
 _LEFT_MIN, _RIGHT_MIN = 360, 440     # the divider cannot squeeze a column below this
+
+
+def _scan_levels(folder=_PUZZLE_DIR):
+    """Puzzles for the level menu, grouped by board size: [(title, [level, ...])].
+
+    Only "id", the size and the generator's "difficulty" are read from each file:
+    never a status or a clue, so the menu cannot leak the hidden solution.
+    Stars: reveal waves per cell (a long chain of deductions = harder).
+    """
+    groups = {}
+    for path in sorted(Path(folder).glob("*.json")):
+        try:
+            data = json.loads(path.read_text(encoding="utf-8-sig"))
+            rows = int(data.get("rows", data.get("size")))
+            cols = int(data.get("cols", data.get("size")))
+        except (OSError, ValueError, TypeError, AttributeError):
+            continue                               # unreadable file: not listed (Open file… still works)
+        difficulty = data.get("difficulty")
+        waves = difficulty.get("waves") if isinstance(difficulty, dict) else None
+        if isinstance(waves, int) and waves > 0:
+            ratio = waves / (rows * cols)
+            stars = 1 if ratio < 0.45 else 2 if ratio < 0.7 else 3
+            label = ("Easy", "Medium", "Hard")[stars - 1]
+        else:
+            stars, label = 0, "Hand-made"
+        level = {"id": str(data.get("id", path.stem)), "file": str(path.resolve()),
+                 "rows": rows, "cols": cols, "stars": stars, "label": label}
+        groups.setdefault((rows, cols), []).append(level)
+
+    def title(size):
+        rows, cols = size
+        return f"{cols} × {rows}" if rows == cols else f"{cols} × {rows} (special)"
+
+    order = sorted(groups, key=lambda size: (size[0] != size[1], size[0] * size[1]))
+    return [(title(size), sorted(groups[size], key=lambda lv: (lv["stars"] != 0, lv["id"]))) for size in order]
 
 
 def _game_api():
@@ -59,6 +95,9 @@ class App:
         self.trace = []              # one dict per ACCEPTED move
         self.end_status = None       # "STUCK" / "INCONSISTENT" once the agent finds no move
         self._auto_job = None        # id from root.after while Auto Solve runs
+        self._current_file = None    # absolute path of the loaded puzzle
+        self.solved_files = set()    # puzzles solved in this session (✓ in the level menu)
+        self._menu = None            # the level menu overlay while it is open
         self._resize_job = None
 
         root.title("Griductive Solver")
@@ -72,6 +111,7 @@ class App:
         else:
             self.render()
             self.root.after_idle(self._place_sash)
+            self.show_levels()
 
     # ================================================================ layout
 
@@ -98,7 +138,7 @@ class App:
         buttons.pack(side="right")
         self.btn = {}
         for key, label, command, kind in (
-                ("load", "Load", self.ask_load, "secondary"),
+                ("levels", "Levels", self.show_levels, "secondary"),
                 ("restart", "Restart", self.restart, "secondary"),
                 ("hint", "Hint", self.hint, "secondary"),
                 ("step", "Step", self.manual_step, "secondary"),
@@ -232,9 +272,60 @@ class App:
                              (("i", "I"), lambda: self.submit_selected(INNOCENT)),
                              (("h", "H"), self.hint),
                              (("space",), self.manual_step),
-                             (("Escape",), self.clear_selection)):
+                             (("Escape",), self._escape)):
             for key in keys:
                 self.root.bind(f"<KeyPress-{key}>", lambda e, a=action: a())
+
+    def _escape(self):
+        """Esc closes the level menu, otherwise clears selection and highlight."""
+        if self._menu is not None:
+            if self.engine is not None:
+                self.hide_levels()
+        else:
+            self.clear_selection()
+
+    # ================================================================ level menu
+
+    def show_levels(self):
+        """Cover the body with the level menu (a grid of puzzles grouped by size)."""
+        self._stop_auto()
+        self.hide_levels()
+        t, f = self.t, self.fonts
+        overlay = tk.Frame(self._body, bg=t["canvas"])
+        overlay.place(x=20, y=20, relwidth=1, width=-40, relheight=1, height=-40)
+        overlay.lift()
+        panel = RoundPanel(overlay, t, fit=False, pad=24)
+        panel.place(relx=0, rely=0, relwidth=1, relheight=1)
+        head = tk.Frame(panel.body, bg=t["panel"])
+        head.pack(fill="x")
+        titles = tk.Frame(head, bg=t["panel"])
+        titles.pack(side="left")
+        tk.Label(titles, text="Choose a case", font=f["title"], bg=t["panel"], fg=t["text"]).pack(anchor="w")
+        tk.Label(titles, text="Click a puzzle to play it. Stars show how long its chain of deductions is.",
+                 font=f["subtitle"], bg=t["panel"], fg=t["muted"]).pack(anchor="w")
+        if self.engine is not None:
+            FlatButton(head, "Back to game", self.hide_levels, t, f, "primary", bg=t["panel"]).pack(side="right")
+        FlatButton(head, "Open file…", self.ask_load, t, f, "secondary", bg=t["panel"]).pack(side="right", padx=(0, 10))
+        groups = _scan_levels()
+        if groups:
+            LevelGrid(panel.body, t, f, groups, self._pick_level, self._current_file,
+                      self.solved_files).pack(fill="both", expand=True, pady=(18, 0))
+        else:
+            tk.Label(panel.body, text=f"No puzzle found in {_PUZZLE_DIR}. Use Open file….", font=f["body"],
+                     bg=t["panel"], fg=t["muted"]).pack(anchor="w", pady=(18, 0))
+        self._menu = overlay
+        self._render_buttons(self.state())
+
+    def hide_levels(self):
+        if self._menu is not None:
+            self._menu.destroy()
+            self._menu = None
+            self._render_buttons(self.state())
+
+    def _pick_level(self, path):
+        self.hide_levels()
+        if not self.load(path) and self.engine is None:
+            self.show_levels()                    # load failed and there is no game behind the menu
 
     def _on_resize(self, event):
         """The card size follows the left column (divider position and window height):
@@ -344,8 +435,8 @@ class App:
 
     def _render_buttons(self, state):
         auto = self._auto_job is not None
-        playable = state is not None and self._safe_is_solved() is False
-        self.btn["restart"].set_enabled(self.engine is not None and not auto)
+        playable = state is not None and self._safe_is_solved() is False and self._menu is None
+        self.btn["restart"].set_enabled(self.engine is not None and not auto and self._menu is None)
         self.btn["hint"].set_enabled(playable and not auto)
         self.btn["step"].set_enabled(playable and not auto)
         self.btn["auto"].set_enabled(playable or auto)
@@ -457,20 +548,23 @@ class App:
             messagebox.showerror("Not implemented yet",
                                  f"A function this window needs is not written yet:\n{e or 'NotImplementedError'}",
                                  parent=self.root)
-            return
+            return False
         except Exception as e:
             messagebox.showerror("Cannot load puzzle", f"{Path(path).name}\n\n{type(e).__name__}: {e}",
                                  parent=self.root)
-            return
+            return False
         self._stop_auto()
+        self.hide_levels()
         self.engine, self.agent = new_engine, new_agent
         self.puzzle_file = Path(path).name
+        self._current_file = str(Path(path).resolve())
         self._reset_play()
         self.render()
         self.root.after_idle(self._place_sash)        # new puzzle: board at its normal size
+        return True
 
     def restart(self):
-        if not self.engine:
+        if not self.engine or self._menu is not None:
             return
         self._stop_auto()
         try:
@@ -488,11 +582,14 @@ class App:
 
     def toggle_theme(self):
         self.theme_name = "dark" if self.theme_name == "light" else "light"
-        sash = self._sash_x
+        sash, menu_open = self._sash_x, self._menu is not None
+        self._menu = None                      # destroyed with the old frame
         self.frame.destroy()
         self._build()
         self.render()
         self.root.after_idle(lambda: self._place_sash(sash))
+        if menu_open:
+            self.show_levels()
 
     def clear_selection(self):
         self.selected, self.clue_focus = None, []
@@ -513,7 +610,8 @@ class App:
         self.render()
 
     def submit_selected(self, verdict):
-        if self.engine and self.selected and self._auto_job is None and self._safe_is_solved() is False:
+        if (self.engine and self.selected and self._auto_job is None and self._menu is None
+                and self._safe_is_solved() is False):
             self._submit(self.selected, verdict)
 
     def _submit(self, cell, verdict, sat_before=None):
@@ -544,6 +642,7 @@ class App:
                                "revealed": self._clue_sentence(state["revealed"][cell], names)})
             self.selected, self.hint_text, self.end_status = None, None, None
             if self._safe_is_solved():
+                self.solved_files.add(self._current_file)
                 self.feedback = ("ok", "SOLVED", f"All {len(state['verdicts'])} cards are decided "
                                                  f"in {len(self.trace)} steps, without guessing.")
             else:
@@ -562,7 +661,8 @@ class App:
     def hint(self):
         """agent.hint(state) -> {"cell", "verdict", "because"}: explain, select the cell, highlight the clues."""
         state = self.state()
-        if state is None or self._safe_is_solved() is not False or self._auto_job is not None:
+        if (state is None or self._safe_is_solved() is not False or self._auto_job is not None
+                or self._menu is not None):
             return
         try:
             h = self.agent.hint(state)
@@ -582,8 +682,8 @@ class App:
         self.render()
 
     def manual_step(self):
-        """Step button / Space key: ignored while Auto Solve is running."""
-        if self._auto_job is None:
+        """Step button / Space key: ignored while Auto Solve runs or the level menu is open."""
+        if self._auto_job is None and self._menu is None:
             self.step()
 
     def step(self):
@@ -624,7 +724,7 @@ class App:
         if self._auto_job is not None:
             self._stop_auto()
             self.render()
-        elif self.engine and self._safe_is_solved() is False:
+        elif self.engine and self._safe_is_solved() is False and self._menu is None:
             self._auto_job = self.root.after(0, self._auto_tick)
             self.render()
 

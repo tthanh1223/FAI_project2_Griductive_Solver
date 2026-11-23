@@ -35,13 +35,13 @@ Python 3.10+. Tkinter ships with Python.
 ## GUI
 
 ```bash
-python main.py                        # empty window, then Load
+python main.py                        # opens the level menu
 python main.py puzzles/p4x5_candle.json
 ```
 
 | Control | Key | What it does |
 |---|---|---|
-| Load | | Pick a puzzle JSON in `puzzles/` |
+| Levels | | Level menu: every puzzle in `puzzles/` grouped by size, with difficulty stars (reveal waves per cell) and ✓ once solved; *Open file…* loads any other JSON |
 | Restart | | Back to the start of the puzzle; stats and trace reset |
 | click a face-down card | | Select it (purple border) |
 | CRIMINAL / INNOCENT | `C` / `I` | `engine.submit`: ACCEPTED turns the card face-up; NOT_PROVABLE / CONTRADICTED leave it face-down and explain why |
