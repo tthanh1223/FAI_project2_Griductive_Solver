@@ -11,12 +11,23 @@ from agent import INCONSISTENT, LogicAgent
 from encoder import evaluate_clue
 from engine import ACCEPTED, CONTRADICTED, NOT_PROVABLE, GameEngine
 from model import CRIMINAL, INNOCENT, Cell, Puzzle, all_cells, load_puzzle
+from test_clues import CLUES_4x5
 
 PUZZLES = Path(__file__).resolve().parents[1] / "puzzles"
 P3 = PUZZLES / "p3_01.json"
 P3_ORDER = ["A2", "A3", "C2", "B2", "C3", "B1", "C1", "B3"]
+
+
+def _cell_count(path):
+    """Number of cells, or 0 for an unreadable file (kept, so the test itself reports the error)."""
+    try:
+        return len(json.loads(path.read_text(encoding="utf-8-sig"))["cells"])
+    except (OSError, ValueError, KeyError, TypeError):
+        return 0
+
+
 # Puzzles small enough for the brute-force oracle (2^cells assignments per state).
-SMALL = [p for p in sorted(PUZZLES.glob("*.json")) if len(json.loads(p.read_text(encoding="utf-8-sig"))["cells"]) <= 9]
+SMALL = [p for p in sorted(PUZZLES.glob("*.json")) if _cell_count(p) <= 9]
 
 
 def _p3() -> Puzzle:
@@ -257,6 +268,42 @@ def test_agent_bugs_do_not_change_state(result, error):
     with pytest.raises(error):
         e.submit("B1", CRIMINAL)
     assert e.public_state() == before
+
+
+# ---------- rectangular grid: catches rows / cols mix-ups that square grids hide ----------
+
+CANDLE_NAMES = ("Abel Bella Clara Dora Enzo Fern Grant Hazel Ivy Jonas "
+                "Karl Lucy Mona Noah Otis Piper Quilla Roy Senna Theo").split()
+CANDLE_CRIMINALS = {"A1", "B1", "D2", "C3", "D3", "A5", "B5"}
+
+
+def _candle(revealed):
+    """Candle shop puzzle, 4 cols x 5 rows (docs/CLUES.md 7.1)."""
+    cells = [Cell(cell, CANDLE_NAMES[i], "Job", CRIMINAL if cell in CANDLE_CRIMINALS else INNOCENT,
+                  CLUES_4x5.get(cell, {"type": "NONE", "text": "flavour"}))
+             for i, cell in enumerate(all_cells(5, 4))]
+    return Puzzle("candle", 5, 4, cells, revealed)
+
+
+def test_rectangular_public_state():
+    s = GameEngine(_candle(["A5"])).public_state()
+    assert (s["rows"], s["cols"]) == (5, 4)
+    assert [c["cell"] for c in s["cells"]] == all_cells(5, 4)
+    assert s["verdicts"] == {"A5": CRIMINAL}
+
+
+def test_rectangular_puzzle_is_solved_without_guessing():
+    e = GameEngine(_candle(["A5"]))
+    result = e.agent.solve(e)
+    assert result["status"] == "SOLVED" and len(result["steps"]) == 19
+    assert {c for c, v in e.public_state()["verdicts"].items() if v == CRIMINAL} == CANDLE_CRIMINALS
+
+
+def test_rectangular_clue_false_on_solution_is_rejected():
+    p = _candle(["A5"])
+    p.cells[0].status = INNOCENT          # A1 is really a criminal, so a clue becomes false
+    with pytest.raises(ValueError, match="false"):
+        GameEngine(p)
 
 
 def test_puzzle_built_in_code_without_load_puzzle():
