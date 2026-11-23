@@ -108,8 +108,21 @@ def region_cells(region: dict, rows: int, cols: int) -> list[str]:
 
 
 def cells_in_clue(clue: dict, rows: int, cols: int) -> list[str]:
-    """Every cell a clue refers to or counts (used by GUI highlight and Hint)."""
-    raise NotImplementedError
+    """Every cell a clue refers to or counts (used by GUI highlight and Hint).
+
+    = cells named by the clue + cells counted by it + anchor cells of its regions
+    ("of", and "a" / "b" of "between", also inside "inter"); row-major, no
+    duplicates. AND is the union of its parts, COUNT_LINES the whole grid, NONE [].
+    Definition: docs/CLUES.md section 5. Examples on a 3x3 grid:
+        {"type": "SAME", "a": "B2", "b": "C3"}                         -> ["B2", "C3"]
+        {"type": "EXACTLY", "k": 1, "region": {"kind": "above", "of": "B3"}} -> ["B1", "B2", "B3"]
+
+    Only what is needed to list the cells is checked: raises ValueError on an
+    unknown clue type, a missing field or an invalid cell / region. Full clue
+    validation is encoder.validate_clue.
+    """
+    _check_size(rows, cols)
+    return [_cell_id(r, c) for r, c in sorted(_clue_positions(clue, rows, cols))]
 
 
 # ---------------------------------------------------------------- helpers
@@ -208,6 +221,51 @@ def _region_positions(region, rows: int, cols: int) -> set[tuple[int, int]]:
     if kind == "left":
         return {(r, j) for j in range(c)}
     return {(r, j) for j in range(c + 1, cols)}      # right
+
+
+def _region_anchors(region: dict, rows: int, cols: int) -> set[tuple[int, int]]:
+    """Positions of the cells a (valid) region is defined from: "of", "a" / "b", recursively in "inter"."""
+    kind = region["kind"]
+    if "of" in _REGION_FIELDS[kind]:
+        return {_parse_cell(region["of"], rows, cols)}
+    if kind == "between":
+        return {_parse_cell(region["a"], rows, cols), _parse_cell(region["b"], rows, cols)}
+    if kind == "inter":
+        return set().union(*(_region_anchors(part, rows, cols) for part in region["regions"]))
+    return set()
+
+
+def _region_and_anchors(region, rows: int, cols: int) -> set[tuple[int, int]]:
+    counted = _region_positions(region, rows, cols)        # validates the region first
+    return counted | _region_anchors(region, rows, cols)
+
+
+def _clue_positions(clue, rows: int, cols: int) -> set[tuple[int, int]]:
+    """(row, col) positions of cells_in_clue."""
+    if not isinstance(clue, dict):
+        raise ValueError(f"A clue must be an object, got {clue!r}")
+    kind = clue.get("type")
+    try:
+        if kind == "NONE":
+            return set()
+        if kind == "FACT":
+            return {_parse_cell(clue["who"], rows, cols)}
+        if kind in ("SAME", "DIFFERENT"):
+            return {_parse_cell(clue["a"], rows, cols), _parse_cell(clue["b"], rows, cols)}
+        if kind in ("EXACTLY", "AT_LEAST", "AT_MOST", "PARITY", "CONNECTED"):
+            return _region_and_anchors(clue["region"], rows, cols)
+        if kind == "COMPARE":
+            return _region_and_anchors(clue["r1"], rows, cols) | _region_and_anchors(clue["r2"], rows, cols)
+        if kind == "AND":
+            parts = clue["parts"]
+            if not isinstance(parts, list):
+                raise ValueError('"parts" of an AND clue must be a list')
+            return set().union(*(_clue_positions(part, rows, cols) for part in parts))
+        if kind == "COUNT_LINES":
+            return {(r, c) for r in range(rows) for c in range(cols)}
+    except KeyError as e:
+        raise ValueError(f"{kind} clue is missing the field {e}") from None
+    raise ValueError(f"Unknown clue type: {kind!r}")
 
 
 def _grid_size(data: dict) -> tuple[int, int]:

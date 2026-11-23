@@ -6,7 +6,8 @@ from pathlib import Path
 
 import pytest
 
-from model import CRIMINAL, INNOCENT, Cell, _parse_cell, all_cells, load_puzzle, region_cells
+from model import CRIMINAL, INNOCENT, Cell, _parse_cell, all_cells, cells_in_clue, load_puzzle, region_cells
+from test_clues import CLUES_3x3, CLUES_4x5
 
 P3 = Path(__file__).resolve().parents[1] / "puzzles" / "p3_01.json"
 
@@ -313,3 +314,78 @@ def test_between_is_symmetric_and_strict(rows, cols):
 def test_edges_and_corners_counts(rows, cols):
     assert len(region_cells({"kind": "edges"}, rows, cols)) == 2 * (rows + cols) - 4
     assert len(region_cells({"kind": "corners"}, rows, cols)) == 4
+
+
+# ---------- cells_in_clue (3x3 unless stated) ----------
+
+ROW2 = {"kind": "row", "row": 2}
+
+
+@pytest.mark.parametrize("clue, expected", [
+    ({"type": "NONE", "text": "I like tea"}, []),
+    ({"type": "FACT", "who": "C2", "status": CRIMINAL}, ["C2"]),
+    ({"type": "SAME", "a": "B2", "b": "C3"}, ["B2", "C3"]),
+    ({"type": "DIFFERENT", "a": "C3", "b": "A1"}, ["A1", "C3"]),
+    ({"type": "EXACTLY", "k": 1, "region": ROW2}, ["A2", "B2", "C2"]),
+    ({"type": "AT_MOST", "k": 0, "count": "innocent", "region": N("B2")}, all_cells(3, 3)),  # anchor B2
+    ({"type": "AT_LEAST", "k": 1, "region": N("A1")}, ["A1", "B1", "A2", "B2"]),
+    ({"type": "EXACTLY", "k": 1, "region": {"kind": "above", "of": "B3"}}, ["B1", "B2", "B3"]),
+    ({"type": "EXACTLY", "k": 0, "region": {"kind": "above", "of": "B1"}}, ["B1"]),   # empty region, anchor only
+    ({"type": "PARITY", "parity": "odd", "region": {"kind": "between", "a": "A3", "b": "C3"}},
+     ["A3", "B3", "C3"]),
+    ({"type": "CONNECTED", "region": {"kind": "col", "col": "B"}}, ["B1", "B2", "B3"]),
+    ({"type": "EXACTLY", "k": 1, "region": {"kind": "cells", "cells": ["C1", "A3"]}}, ["C1", "A3"]),
+    ({"type": "COMPARE", "r1": N("A1"), "op": "=", "r2": N("C3")},
+     ["A1", "B1", "A2", "B2", "C2", "B3", "C3"]),
+    ({"type": "EXACTLY", "k": 1, "region": {"kind": "inter", "regions": [N("A1"), N("C1")]}},
+     ["A1", "B1", "C1", "B2"]),                                      # anchors A1, C1 + counted B1, B2
+    ({"type": "AND", "parts": [{"type": "FACT", "who": "C3", "status": INNOCENT},
+                               {"type": "EXACTLY", "k": 1, "region": {"kind": "row", "row": 1}}]},
+     ["A1", "B1", "C1", "C3"]),
+    ({"type": "COUNT_LINES", "axis": "row", "k": 1, "where": {"type": "EXACTLY", "k": 1}}, all_cells(3, 3)),
+])
+def test_cells_in_clue_3x3(clue, expected):
+    assert cells_in_clue(clue, 3, 3) == expected
+
+
+def test_cells_in_clue_clues_md_example():
+    # docs/CLUES.md section 5: anchors B1, B5, A4 + counted B3, B4
+    assert cells_in_clue(CLUES_4x5["A5"], 5, 4) == ["B1", "B3", "A4", "B4", "B5"]
+    assert cells_in_clue(CLUES_4x5["D4"], 5, 4) == ["D1", "D2", "D3", "D4", "D5"]
+
+
+def test_cells_in_clue_input_not_modified():
+    clue = copy.deepcopy(CLUES_4x5["C2"])
+    cells_in_clue(clue, 5, 4)
+    assert clue == CLUES_4x5["C2"]
+
+
+@pytest.mark.parametrize("clue", [
+    "FACT", None, {}, {"type": "MAYBE"}, {"type": "FACT"}, {"type": "SAME", "a": "A1"},
+    {"type": "FACT", "who": "D9", "status": CRIMINAL}, {"type": "EXACTLY", "k": 1},
+    {"type": "EXACTLY", "k": 1, "region": {"kind": "nope"}}, {"type": "COMPARE", "r1": ROW2},
+    {"type": "AND", "parts": {"type": "NONE", "text": ""}},
+    {"type": "AND", "parts": [{"type": "FACT", "who": "A1", "status": CRIMINAL}, {"type": "FACT"}]},
+])
+def test_cells_in_clue_errors(clue):
+    with pytest.raises(ValueError):
+        cells_in_clue(clue, 3, 3)
+
+
+def _p3_clues():
+    return [c.clue for c in load_puzzle(P3).cells]
+
+
+@pytest.mark.parametrize("rows, cols, clues", [
+    (3, 3, _p3_clues() + CLUES_3x3),
+    (5, 4, list(CLUES_4x5.values())),
+])
+def test_cells_in_clue_properties(rows, cols, clues):
+    order = {cell: i for i, cell in enumerate(all_cells(rows, cols))}
+    for clue in clues:
+        out = cells_in_clue(clue, rows, cols)
+        assert all(cell in order for cell in out), clue
+        assert [order[c] for c in out] == sorted(set(order[c] for c in out)), clue
+        for key in ("region", "r1", "r2"):                       # every counted cell is listed
+            if key in clue:
+                assert set(region_cells(clue[key], rows, cols)) <= set(out), clue
