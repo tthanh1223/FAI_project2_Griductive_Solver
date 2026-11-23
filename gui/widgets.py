@@ -450,6 +450,7 @@ class BoardView(tk.Canvas):
     """Grid of character cards with column letters, row numbers and the colour legend."""
 
     LABEL_W, HEADER_H, GAP, LEGEND_TOP = 30, 28, 8, 14
+    MIN_CARD, MAX_CARD = 96, 210
 
     def __init__(self, master, theme, fonts, avatars, on_click):
         self.theme, self.fonts, self.avatars, self.on_click = theme, fonts, avatars, on_click
@@ -463,12 +464,25 @@ class BoardView(tk.Canvas):
         self.create_text(280, 190, text=message, fill=t["text"], font=f["panel_title"])
         self.create_text(280, 220, text=detail, fill=t["muted"], font=f["body"], width=480, justify="center")
 
-    def card_size(self, rows, cols, max_height):
-        """(width, height) of a card: 140 px up to 4 columns, 116 px with 5;
-        the height shrinks (not the width) only if the board would not fit max_height."""
+    def natural_width(self, rows, cols):
+        """Board width with cards at their normal width (140 px up to 4 columns, 116 px with 5)."""
         w = 140 if cols <= 4 else 116
-        h = 140 if rows <= 4 and cols <= 4 else 116
-        h = min(h, w)
+        return self.LABEL_W + cols * w + (cols - 1) * self.GAP
+
+    def min_width(self, cols):
+        """Board width with the smallest cards (the divider must leave at least this)."""
+        return self.LABEL_W + cols * self.MIN_CARD + (cols - 1) * self.GAP
+
+    def card_size(self, rows, cols, max_width, max_height):
+        """(width, height) of a card. The width follows the space the divider leaves
+        (normal width if unknown); the height is at most the width and shrinks so the
+        board fits max_height."""
+        if max_width is None:
+            w = 140 if cols <= 4 else 116
+        else:
+            w = int((max_width - self.LABEL_W - (cols - 1) * self.GAP) // cols)
+        w = max(self.MIN_CARD, min(self.MAX_CARD, w))
+        h = w
         while h > 92 and self._height(rows, cols, w, h) > max_height:
             h -= 2
         return w, h
@@ -477,10 +491,10 @@ class BoardView(tk.Canvas):
         grid_w = self.LABEL_W + cols * w + (cols - 1) * self.GAP
         return self.HEADER_H + rows * h + (rows - 1) * self.GAP + self.LEGEND_TOP + self._legend(0, grid_w, False)
 
-    def draw(self, cells, rows, cols, texts, verdicts, selected, highlighted, max_height=10_000):
+    def draw(self, cells, rows, cols, texts, verdicts, selected, highlighted, max_width=None, max_height=10_000):
         """cells: public_state["cells"]; texts: {cell: clue sentence} of face-up cards."""
         t, f = self.theme, self.fonts
-        w, h = self.card_size(rows, cols, max_height)
+        w, h = self.card_size(rows, cols, max_width, max_height)
         grid_h = rows * h + (rows - 1) * self.GAP
         width = self.LABEL_W + cols * w + (cols - 1) * self.GAP
         self.delete("all")

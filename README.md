@@ -50,6 +50,7 @@ python main.py puzzles/p4x5_candle.json
 | Step | `Space` | One move of the agent (`agent.next_move` + `submit`) |
 | Auto Solve / Stop | | Steps every 400 ms until SOLVED or STUCK; click again to stop |
 | Theme | | Light / dark |
+| drag the divider between board and panels | | Bigger / smaller cards; the panels take the rest |
 | | `Esc` | Clear selection and highlight |
 
 Side panels: *Solver stats* (`agent.stats` + `build_kb` size), *Deduction trace* (one line per accepted move: cell → verdict, clues that were face-up, SAT calls of that move, clue revealed), and the status bar (IN PROGRESS / SOLVED / STUCK / INCONSISTENT).

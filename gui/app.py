@@ -26,6 +26,8 @@ _PUZZLE_DIR = Path(__file__).resolve().parent.parent / "puzzles"
 _AUTO_DELAY_MS = 400
 _READY = ("info", "Ready", "Select a face-down card, then choose CRIMINAL or INNOCENT.")
 _SIDE_PAD, _SIDE_GAP = 14, 12        # padding inside / gap between the right-hand panels
+_PANE_GAP = 10                       # space between each column and the divider
+_LEFT_MIN, _RIGHT_MIN = 360, 440     # the divider cannot squeeze a column below this
 
 
 def _game_api():
@@ -63,12 +65,14 @@ class App:
         root.title("Griductive Solver")
         root.geometry("1280x900")
         root.minsize(1100, 860)
+        self._sash_x = None
         self._bind_keys()
         self._build()
         if puzzle_path:
             self.load(puzzle_path)
         else:
             self.render()
+            self.root.after_idle(self._place_sash)
 
     # ================================================================ layout
 
@@ -118,15 +122,22 @@ class App:
                                anchor="w", padx=20, pady=6)
         self.status.pack(fill="x")
 
-        # 3. body: board column | side column
+        # 3. body: board column | draggable divider (PanedWindow sash) | side column
         body = tk.Frame(self.frame, bg=t["canvas"], padx=20, pady=20)
         body.pack(fill="both", expand=True)
-        body.columnconfigure(1, weight=1)
-        body.rowconfigure(0, weight=1)
+        self.paned = tk.PanedWindow(body, orient="horizontal", bg=t["border"], bd=0, sashwidth=6,
+                                    sashrelief="flat", showhandle=False, opaqueresize=True)
+        self.paned.pack(fill="both", expand=True)
+        left_pane = tk.Frame(self.paned, bg=t["canvas"])
+        right_pane = tk.Frame(self.paned, bg=t["canvas"])
+        self.paned.add(left_pane, minsize=_LEFT_MIN, stretch="never")
+        self.paned.add(right_pane, minsize=_RIGHT_MIN, stretch="always")
+        self.paned.bind("<ButtonRelease-1>", self._remember_sash, add="+")
+        self._left_pane = left_pane
 
         # left: board panel on top, decorative tapes in the space left below (pack shrinks them first)
-        self.left = tk.Frame(body, bg=t["canvas"])
-        self.left.grid(row=0, column=0, sticky="nsw")
+        self.left = tk.Frame(left_pane, bg=t["canvas"])
+        self.left.pack(fill="both", expand=True, padx=(0, _PANE_GAP))
         self.board_panel = RoundPanel(self.left, t)
         self.board_panel.pack(side="top", anchor="nw")
         tk.Label(self.board_panel.body, text="Board", font=f["panel_title"], bg=t["panel"],
@@ -135,10 +146,10 @@ class App:
         self.board.pack(anchor="w", pady=(6, 0))
         CrossedTapes(self.left, t, f).pack(side="top", fill="both", expand=True, pady=(10, 0))
         self.left.bind("<Configure>", self._on_resize, add="+")
-        self._left_height = None
+        self._left_size = None
 
-        right = tk.Frame(body, bg=t["canvas"])
-        right.grid(row=0, column=1, sticky="nsew", padx=(20, 0))
+        right = tk.Frame(right_pane, bg=t["canvas"])
+        right.pack(fill="both", expand=True, padx=(_PANE_GAP, 0))
         right.columnconfigure(0, weight=1)
         right.rowconfigure(1, weight=3, minsize=96)      # Revealed clues
         right.rowconfigure(4, weight=2, minsize=96)      # Deduction trace
@@ -226,9 +237,10 @@ class App:
                 self.root.bind(f"<KeyPress-{key}>", lambda e, a=action: a())
 
     def _on_resize(self, event):
-        """The card size depends on the window height: redraw (once) after a height change."""
-        if event.height != self._left_height:
-            self._left_height = event.height
+        """The card size follows the left column (divider position and window height):
+        redraw once after its size changes."""
+        if (event.width, event.height) != self._left_size:
+            self._left_size = (event.width, event.height)
             if self._resize_job is not None:
                 self.root.after_cancel(self._resize_job)
             self._resize_job = self.root.after(80, self._after_resize)
@@ -236,6 +248,24 @@ class App:
     def _after_resize(self):
         self._resize_job = None
         self.render()
+
+    def _remember_sash(self, _event=None):
+        """Keep the divider where the user dropped it (also across a theme switch)."""
+        self._sash_x = self.paned.sash_coord(0)[0]
+
+    def _place_sash(self, x=None):
+        """Put the divider at x, or where the board has its normal card size (140 px)."""
+        state = self.state()
+        rows, cols = (state["rows"], state["cols"]) if state else (3, 3)
+        extra = 2 * self.board_panel.pad + _PANE_GAP
+        left_min = max(_LEFT_MIN, self.board.min_width(cols) + extra)   # smallest cards still fit
+        self.paned.paneconfigure(self._left_pane, minsize=left_min)
+        if x is None:
+            x = (self.board.natural_width(rows, cols) if state else 560) + extra
+        self.paned.update_idletasks()
+        x = max(left_min, min(int(x), self.paned.winfo_width() - _RIGHT_MIN))
+        self.paned.sash_place(0, x, 1)
+        self._sash_x = x
 
     # ================================================================ drawing
 
@@ -265,7 +295,8 @@ class App:
         self.subtitle.configure(text=f"Puzzle: {self.puzzle_file}  ·  {state['cols']} × {state['rows']}"
                                      f"  ·  Step {len(self.trace)}")
         self.board.draw(state["cells"], state["rows"], state["cols"], texts, state["verdicts"],
-                        self.selected, self._highlighted(state), self._board_max_height())
+                        self.selected, self._highlighted(state), self._board_max_width(),
+                        self._board_max_height())
         self.board_panel.set_width(self.board.winfo_reqwidth())
 
         if self.selected in info:
@@ -312,6 +343,13 @@ class App:
         can_judge = playable and self.selected is not None and not auto
         self.btn["criminal"].set_enabled(can_judge)
         self.btn["innocent"].set_enabled(can_judge)
+
+    def _board_max_width(self):
+        """Pixels the board canvas may use: the left column minus the panel padding."""
+        width = self.left.winfo_width()
+        if width <= 1:
+            return None                       # not laid out yet: normal card size
+        return width - 2 * self.board_panel.pad
 
     def _board_max_height(self):
         """Pixels the board canvas may use: the left column minus the panel padding and title."""
@@ -419,6 +457,7 @@ class App:
         self.puzzle_file = Path(path).name
         self._reset_play()
         self.render()
+        self.root.after_idle(self._place_sash)        # new puzzle: board at its normal size
 
     def restart(self):
         if not self.engine:
@@ -439,9 +478,11 @@ class App:
 
     def toggle_theme(self):
         self.theme_name = "dark" if self.theme_name == "light" else "light"
+        sash = self._sash_x
         self.frame.destroy()
         self._build()
         self.render()
+        self.root.after_idle(lambda: self._place_sash(sash))
 
     def clear_selection(self):
         self.selected, self.clue_focus = None, []
