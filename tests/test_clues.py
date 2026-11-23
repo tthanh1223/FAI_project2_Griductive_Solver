@@ -227,3 +227,78 @@ def test_clause_counts_match_spec(cell):
     assert len(cnf) == SPEC_CLAUSES_4x5[cell]
     assert vm.next_aux - 1 - 20 == (5 if cell == "A4" else 0)
 
+
+def _matches_evaluator(cnf, vm, clue, rows, cols, assignments):
+    from model import all_cells
+    from encoder import evaluate_clue
+    from dpll import dpll_solve
+    cells = call(all_cells, rows, cols)
+    assert all(c and 0 not in c for c in cnf), "empty clause or literal 0"
+    for bits in assignments(len(cells)):
+        a = dict(zip(cells, bits))
+        lits = [vm.var(x) if a[x] else -vm.var(x) for x in cells]
+        sat, _, _ = call(dpll_solve, cnf, vm.next_aux - 1, lits)
+        assert sat == evaluate_clue(clue, a, rows, cols), (clue, a)
+
+
+def _all_boards(n):
+    return itertools.product([False, True], repeat=n)
+
+
+@pytest.mark.parametrize("count", ["criminal", "innocent"])
+@pytest.mark.parametrize("parity", ["odd", "even"])
+@pytest.mark.parametrize("region", [{"kind": "all"}, {"kind": "row", "row": 2}, N("B2"), N("A1")])
+def test_compact_parity_matches_evaluator(region, parity, count):
+    """XOR chain (forced with limit=0) == evaluator on all 512 boards of 3x3."""
+    from encoder import VarMap, _encode_parity
+    clue = {"type": "PARITY", "parity": parity, "count": count, "region": region}
+    vm = VarMap(3, 3)
+    cnf = call(_encode_parity, clue, vm, limit=0)
+    _matches_evaluator(cnf, vm, clue, 3, 3, _all_boards)
+
+
+COMPARE_PAIRS = [
+    (N("A1"), N("C3")),                                # disjoint except B2
+    ({"kind": "row", "row": 1}, {"kind": "row", "row": 3}),  # disjoint
+    ({"kind": "all"}, {"kind": "row", "row": 2}),     # r2 inside r1
+    ({"kind": "row", "row": 2}, {"kind": "all"}),     # r1 inside r2
+    (N("B2"), N("B2")),                                # identical
+    ({"kind": "above", "of": "A1"}, N("C1")),          # empty r1
+    (N("C1"), {"kind": "above", "of": "A1"}),          # empty r2
+]
+
+
+@pytest.mark.parametrize("count", ["criminal", "innocent"])
+@pytest.mark.parametrize("op", ["<", ">", "="])
+@pytest.mark.parametrize("pair", range(len(COMPARE_PAIRS)))
+def test_compact_compare_matches_evaluator(pair, op, count):
+    """Counter form of COMPARE (forced with limit=0) == evaluator on all 512 boards of 3x3."""
+    from encoder import VarMap, _encode_compare
+    r1, r2 = COMPARE_PAIRS[pair]
+    clue = {"type": "COMPARE", "r1": r1, "op": op, "r2": r2, "count": count}
+    vm = VarMap(3, 3)
+    cnf = call(_encode_compare, clue, vm, limit=0)
+    _matches_evaluator(cnf, vm, clue, 3, 3, _all_boards)
+
+
+TOP_8 = {"kind": "cells", "cells": ["A1", "B1", "C1", "D1", "A2", "B2", "C2", "D2"]}
+BOTTOM_8 = {"kind": "cells", "cells": ["A3", "B3", "C3", "D3", "A4", "B4", "C4", "D4"]}
+
+
+@pytest.mark.parametrize("clue", [
+    {"type": "PARITY", "parity": "odd", "region": {"kind": "all"}},
+    {"type": "PARITY", "parity": "even", "count": "innocent", "region": {"kind": "all"}},
+    # 8 vs 8 cells: true and false both come up often, and the counter is the sequential one.
+    {"type": "COMPARE", "r1": TOP_8, "op": "=", "r2": BOTTOM_8},
+    {"type": "COMPARE", "r1": TOP_8, "op": ">", "r2": BOTTOM_8, "count": "innocent"},
+    {"type": "COMPARE", "r1": TOP_8, "op": "<", "r2": BOTTOM_8},
+], ids=lambda c: c["type"])
+def test_16_cell_clues_are_small_and_correct(clue):
+    """|U| = 16 on 4x4: no 2^16-row truth table, still equal to the evaluator."""
+    from encoder import VarMap, encode_clue
+    vm = VarMap(4, 4)
+    cnf = call(encode_clue, clue, vm)
+    assert len(cnf) < 1000
+    rng = random.Random(14003)
+    _matches_evaluator(cnf, vm, clue, 4, 4,
+                       lambda n: ([rng.random() < 0.5 for _ in range(n)] for _ in range(300)))

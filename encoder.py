@@ -7,13 +7,18 @@ Auxiliary variables start at rows * cols + 1.
 CNF: list[list[int]] (DIMACS style, negative literal = negation).
 Input / output of every function: docs/INTERFACES.md.
 Meaning, CNF encoding and validation of every clue type: docs/CLUES.md.
+
+Size limit (CLUES.md 4.2, 4.4): a truth table or a subset enumeration is used only
+while it has at most _LIMIT rows / subsets. Above that, PARITY uses an XOR chain and
+COMPARE is turned into a counting clue; a counting clue with more than _LIMIT subsets
+uses the sequential counter. These encodings add auxiliary variables.
 """
 from itertools import combinations
 from math import comb
 
 from model import CRIMINAL, INNOCENT, region_cells
 
-_LIMIT = 2000  # max subsets before the sequential counter (CLUES.md 4.4)
+_LIMIT = 2000
 
 _COUNT_TYPES = {"EXACTLY", "AT_LEAST", "AT_MOST"}
 _WHERE_TYPES = _COUNT_TYPES | {"PARITY", "CONNECTED"}
@@ -304,16 +309,41 @@ def _truth_table(clue, cells, vm):
     return clauses
 
 
-def _encode_parity(clue, vm):
+def _encode_parity(clue, vm, *, limit=_LIMIT):
     cells = region_cells(clue["region"], vm.rows, vm.cols)
-    return _truth_table(clue, cells, vm)
+    if not cells or 2 ** len(cells) <= limit:
+        return _truth_table(clue, cells, vm)
+
+    # XOR chain: t_i <-> t_(i-1) xor l_i, then fix the last t to the wanted parity.
+    lits = _counted_lits(cells, clue, vm)
+    clauses = []
+    t = lits[0]
+    for x in lits[1:]:
+        u = vm.new_aux()
+        clauses += [[-u, t, x], [-u, -t, -x], [u, -t, x], [u, t, -x]]
+        t = u
+    clauses.append([t] if clue["parity"] == "odd" else [-t])
+    return clauses
 
 
-def _encode_compare(clue, vm):
+def _encode_compare(clue, vm, *, limit=_LIMIT):
     left = region_cells(clue["r1"], vm.rows, vm.cols)
     right = region_cells(clue["r2"], vm.rows, vm.cols)
     cells = sorted(set(left) | set(right), key=vm.var)
-    return _truth_table(clue, cells, vm)
+    if not cells or 2 ** len(cells) <= limit:
+        return _truth_table(clue, cells, vm)
+
+    # Cells in both regions add the same amount to both sides, so drop them:
+    # n1 - n2 = count(A) - count(B) with A = r1 \ r2, B = r2 \ r1.
+    # count(A) - count(B) (op) 0  <=>  count(A + not B) (op) |B|, a plain counting clue.
+    only_left = [cell for cell in left if cell not in right]
+    only_right = [cell for cell in right if cell not in left]
+    lits = _counted_lits(only_left, clue, vm) + [-x for x in _counted_lits(only_right, clue, vm)]
+    m = len(only_right)
+    kind, k = {"=": ("EXACTLY", m), ">": ("AT_LEAST", m + 1), "<": ("AT_MOST", m - 1)}[clue["op"]]
+    if not 0 <= k <= len(lits):
+        return _false(vm)
+    return _encode_count(kind, lits, k, vm, limit=limit)
 
 
 def _encode_count_lines(clue, vm):
