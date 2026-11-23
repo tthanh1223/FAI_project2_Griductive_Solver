@@ -9,8 +9,8 @@ import pytest
 
 from encoder import VarMap, encode_clue, evaluate_clue
 from model import CRIMINAL, INNOCENT, Cell, Puzzle, all_cells, load_puzzle
-from puzzles.generate import (_to_puzzle, difficulty, generate, is_useful_clue, main, puzzle_id,
-                              random_clue, to_json)
+from puzzles.generate import (_to_puzzle, check_size, difficulty, generate, is_useful_clue, main,
+                              puzzle_id, random_clue, to_json)
 from puzzles.validate import puzzle_problems
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -91,10 +91,20 @@ def test_difficulty_rejects_puzzle_that_needs_guessing():
         difficulty(Puzzle("stuck", 2, 2, cells, ["A1"]))
 
 
-@pytest.mark.parametrize("rows, cols", [(1, 3), (3, 1), (7, 7), (2, 27)])
+@pytest.mark.parametrize("rows, cols", [(1, 3), (3, 1), (7, 7), (6, 7), (2, 27)])
 def test_unsupported_sizes(rows, cols):
     with pytest.raises(ValueError):
         generate(rows, cols, SEED, 1)
+
+
+@pytest.mark.parametrize("rows, cols", [(2, 2), (5, 8), (8, 5), (2, 20)])
+def test_size_limits_that_are_accepted(rows, cols):
+    check_size(rows, cols)                      # 2 rows / 2 cols and 40 cells (= number of names) are the limits
+
+
+def test_smallest_grid_is_generated():
+    data = generate(2, 2, SEED, 1)
+    assert puzzle_problems(_to_puzzle(data["id"], data)) == []
 
 
 # ---------- clue drawing ----------
@@ -149,6 +159,11 @@ def test_main_writes_skips_and_overwrites(tmp_path, capsys):
     assert "skip g3_01.json" in capsys.readouterr().out
     main(args + ["--force"])
     assert load_puzzle(files[0]).id == "g3_01"
+
+
+def test_main_default_count_is_one(tmp_path):
+    assert main(["--rows", "3", "--cols", "3", "--out", str(tmp_path)]) == 0
+    assert [f.name for f in tmp_path.glob("*.json")] == ["g3_01.json"]
 
 
 @pytest.mark.parametrize("extra", [

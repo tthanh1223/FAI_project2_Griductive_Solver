@@ -1,13 +1,18 @@
 """Tests for puzzles/validate.py, and every puzzle file in puzzles/ must be valid."""
 import copy
+import json
+import subprocess
+import sys
 from pathlib import Path
 
 import pytest
 
 from model import CRIMINAL, INNOCENT, Cell, Puzzle, all_cells, load_puzzle
+from puzzles.generate import difficulty
 from puzzles.validate import main, puzzle_problems
 
-PUZZLES = Path(__file__).resolve().parents[1] / "puzzles"
+ROOT = Path(__file__).resolve().parents[1]
+PUZZLES = ROOT / "puzzles"
 FILES = sorted(PUZZLES.glob("*.json"))
 
 
@@ -34,6 +39,17 @@ def test_puzzle_set_for_experiments():
 @pytest.mark.parametrize("path", FILES, ids=lambda p: p.stem)
 def test_id_matches_file_name(path):
     assert load_puzzle(path).id == path.stem
+
+
+@pytest.mark.parametrize("path", sorted(PUZZLES.glob("g*.json")), ids=lambda p: p.stem)
+def test_stored_difficulty_matches_recomputed(path):
+    stored = json.loads(path.read_text(encoding="utf-8"))["difficulty"]
+    assert difficulty(load_puzzle(path)) == stored
+
+
+def test_difficulty_of_p3_01():
+    # 8 face-down cards, 7 waves: once, two cards are forced at the same time.
+    assert difficulty(load_puzzle(PUZZLES / "p3_01.json"))["waves"] == 7
 
 
 def test_no_two_puzzles_are_the_same():
@@ -120,11 +136,31 @@ def test_names_order_uses_row_major_even_if_cells_are_shuffled():
 
 # ---------- command line ----------
 
+def _status_lines(out):
+    """{path: "OK" | "INVALID"}; a status line is a 7-char label, a space, then the path (may contain spaces)."""
+    return {line[8:]: line[:7].strip() for line in out.splitlines() if line and not line.startswith(" ")}
+
+
 def test_main_reports_valid_invalid_and_unreadable(tmp_path, capsys):
     broken = tmp_path / "broken.json"
     broken.write_text("{", encoding="utf-8")
-    assert main([str(PUZZLES / "p3_01.json")]) == 0
-    assert main([str(PUZZLES / "p3_01.json"), str(broken)]) == 1
-    out = capsys.readouterr().out
-    assert "OK      " in out and "INVALID" in out and "broken.json" in out
+    good = str(PUZZLES / "p3_01.json")
+    assert main([good]) == 0
+    assert _status_lines(capsys.readouterr().out) == {good: "OK"}
+    assert main([good, str(broken)]) == 1
+    assert _status_lines(capsys.readouterr().out) == {good: "OK", str(broken): "INVALID"}
     assert main([]) == 2
+
+
+def test_command_line_checks_every_file(tmp_path):
+    """python -m puzzles.validate GOOD BAD: first file is not skipped, labels are right, exit 1."""
+    bad = tmp_path / "bad.json"
+    data = json.loads((PUZZLES / "p3_02.json").read_text(encoding="utf-8"))
+    data["revealed"] = ["A1"]                               # p3_02 only works from B2
+    bad.write_text(json.dumps(data), encoding="utf-8")
+    good = str(PUZZLES / "p3_01.json")
+    run = subprocess.run([sys.executable, "-m", "puzzles.validate", good, str(bad)],
+                         cwd=ROOT, capture_output=True, text=True, encoding="utf-8")
+    assert run.returncode == 1
+    assert _status_lines(run.stdout) == {good: "OK", str(bad): "INVALID"}
+    assert "without guessing" in run.stdout
