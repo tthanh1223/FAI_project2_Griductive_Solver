@@ -257,9 +257,12 @@ class App:
         if x is None:
             x = (self.board.natural_width(rows, cols) if state else 560) + 2 * self.board_panel.pad
         self._body.update_idletasks()
-        low = max(_LEFT_MIN, self.board.min_width(cols) + 2 * self.board_panel.pad)
+        pad2 = 2 * self.board_panel.pad
+        low = max(_LEFT_MIN, self.board.min_width(cols) + pad2)
         inner = self._body.winfo_width() - 40 - Divider.WIDTH       # minus the body padding
         high = max(low, inner - _RIGHT_MIN) if inner > 0 else max(low, int(x))
+        if state:                         # never wider than the biggest board: the panel fills the column
+            high = max(low, min(high, self.board.max_width(cols) + pad2))
         x = max(low, min(int(x), high))
         if int(self._left_pane["width"]) != x:
             self._left_pane.configure(width=x)

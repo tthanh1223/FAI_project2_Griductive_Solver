@@ -479,6 +479,7 @@ class BoardView(tk.Canvas):
     """Grid of character cards with column letters, row numbers and the colour legend."""
 
     LABEL_W, HEADER_H, GAP, LEGEND_TOP = 30, 28, 8, 14
+    EDGE = 3                                   # free pixels right of the last column, so its border is never clipped
     MIN_CARD, MAX_CARD = 96, 210
 
     def __init__(self, master, theme, fonts, avatars, on_click):
@@ -496,11 +497,15 @@ class BoardView(tk.Canvas):
     def natural_width(self, rows, cols):
         """Board width with cards at their normal width (140 px up to 4 columns, 116 px with 5)."""
         w = 140 if cols <= 4 else 116
-        return self.LABEL_W + cols * w + (cols - 1) * self.GAP
+        return self.LABEL_W + cols * w + (cols - 1) * self.GAP + self.EDGE
+
+    def max_width(self, cols):
+        """Board width with the biggest cards (the divider stops here, so the panel never ends early)."""
+        return self.LABEL_W + cols * self.MAX_CARD + (cols - 1) * self.GAP + self.EDGE
 
     def min_width(self, cols):
         """Board width with the smallest cards (the divider must leave at least this)."""
-        return self.LABEL_W + cols * self.MIN_CARD + (cols - 1) * self.GAP
+        return self.LABEL_W + cols * self.MIN_CARD + (cols - 1) * self.GAP + self.EDGE
 
     def card_size(self, rows, cols, max_width, max_height):
         """(width, height) of a card. The width follows the space the divider leaves
@@ -509,7 +514,7 @@ class BoardView(tk.Canvas):
         if max_width is None:
             w = 140 if cols <= 4 else 116
         else:
-            w = int((max_width - self.LABEL_W - (cols - 1) * self.GAP) // cols)
+            w = int((max_width - self.LABEL_W - self.EDGE - (cols - 1) * self.GAP) // cols)
         w = max(self.MIN_CARD, min(self.MAX_CARD, w))
         h = w
         while h > 92 and self._height(rows, cols, w, h) > max_height:
@@ -525,7 +530,7 @@ class BoardView(tk.Canvas):
         t, f = self.theme, self.fonts
         w, h = self.card_size(rows, cols, max_width, max_height)
         grid_h = rows * h + (rows - 1) * self.GAP
-        width = self.LABEL_W + cols * w + (cols - 1) * self.GAP
+        width = self.LABEL_W + cols * w + (cols - 1) * self.GAP + self.EDGE
         self.delete("all")
 
         for c in range(cols):
