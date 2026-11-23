@@ -1,0 +1,239 @@
+{
+  "id": "g4_05",
+  "size": 4,
+  "cells": [
+    {
+      "cell": "A1",
+      "name": "Abel",
+      "job": "Painter",
+      "status": "INNOCENT",
+      "clue": {
+        "type": "EXACTLY",
+        "k": 4,
+        "region": {
+          "kind": "edges"
+        }
+      }
+    },
+    {
+      "cell": "B1",
+      "name": "Bea",
+      "job": "Teacher",
+      "status": "INNOCENT",
+      "clue": {
+        "type": "EXACTLY",
+        "k": 0,
+        "region": {
+          "kind": "inter",
+          "regions": [
+            {
+              "kind": "neighbors",
+              "of": "A3"
+            },
+            {
+              "kind": "neighbors",
+              "of": "B1"
+            }
+          ]
+        },
+        "count": "innocent"
+      }
+    },
+    {
+      "cell": "C1",
+      "name": "Eliza",
+      "job": "Farmer",
+      "status": "CRIMINAL",
+      "clue": {
+        "type": "DIFFERENT",
+        "a": "D4",
+        "b": "D1"
+      }
+    },
+    {
+      "cell": "D1",
+      "name": "Felix",
+      "job": "Pilot",
+      "status": "CRIMINAL",
+      "clue": {
+        "type": "EXACTLY",
+        "k": 1,
+        "region": {
+          "kind": "col",
+          "col": "A"
+        }
+      }
+    },
+    {
+      "cell": "A2",
+      "name": "Franz",
+      "job": "Doctor",
+      "status": "CRIMINAL",
+      "clue": {
+        "type": "AT_MOST",
+        "k": 2,
+        "region": {
+          "kind": "col",
+          "col": "B"
+        },
+        "count": "innocent"
+      }
+    },
+    {
+      "cell": "B2",
+      "name": "Hannah",
+      "job": "Baker",
+      "status": "CRIMINAL",
+      "clue": {
+        "type": "DIFFERENT",
+        "a": "B2",
+        "b": "B1"
+      }
+    },
+    {
+      "cell": "C2",
+      "name": "Hector",
+      "job": "Teacher",
+      "status": "CRIMINAL",
+      "clue": {
+        "type": "DIFFERENT",
+        "a": "C1",
+        "b": "C4"
+      }
+    },
+    {
+      "cell": "D2",
+      "name": "Jonas",
+      "job": "Detective",
+      "status": "INNOCENT",
+      "clue": {
+        "type": "EXACTLY",
+        "k": 0,
+        "region": {
+          "kind": "below",
+          "of": "A3"
+        }
+      }
+    },
+    {
+      "cell": "A3",
+      "name": "Karl",
+      "job": "Doctor",
+      "status": "INNOCENT",
+      "clue": {
+        "type": "SAME",
+        "a": "A4",
+        "b": "D2"
+      }
+    },
+    {
+      "cell": "B3",
+      "name": "Kira",
+      "job": "Guard",
+      "status": "CRIMINAL",
+      "clue": {
+        "type": "SAME",
+        "a": "B1",
+        "b": "A3"
+      }
+    },
+    {
+      "cell": "C3",
+      "name": "Liam",
+      "job": "Judge",
+      "status": "INNOCENT",
+      "clue": {
+        "type": "EXACTLY",
+        "k": 1,
+        "region": {
+          "kind": "row",
+          "row": 2
+        },
+        "count": "innocent"
+      }
+    },
+    {
+      "cell": "D3",
+      "name": "Mara",
+      "job": "Judge",
+      "status": "CRIMINAL",
+      "clue": {
+        "type": "EXACTLY",
+        "k": 0,
+        "region": {
+          "kind": "row",
+          "row": 4
+        }
+      }
+    },
+    {
+      "cell": "A4",
+      "name": "Mona",
+      "job": "Painter",
+      "status": "INNOCENT",
+      "clue": {
+        "type": "AT_MOST",
+        "k": 0,
+        "region": {
+          "kind": "inter",
+          "regions": [
+            {
+              "kind": "neighbors",
+              "of": "A2"
+            },
+            {
+              "kind": "row",
+              "row": 2
+            }
+          ]
+        },
+        "count": "innocent"
+      }
+    },
+    {
+      "cell": "B4",
+      "name": "Roy",
+      "job": "Pilot",
+      "status": "INNOCENT",
+      "clue": {
+        "type": "EXACTLY",
+        "k": 1,
+        "region": {
+          "kind": "neighbors",
+          "of": "B4"
+        }
+      }
+    },
+    {
+      "cell": "C4",
+      "name": "Xavier",
+      "job": "Judge",
+      "status": "INNOCENT",
+      "clue": {
+        "type": "AT_LEAST",
+        "k": 1,
+        "region": {
+          "kind": "neighbors",
+          "of": "C4"
+        }
+      }
+    },
+    {
+      "cell": "D4",
+      "name": "Zane",
+      "job": "Doctor",
+      "status": "INNOCENT",
+      "clue": {
+        "type": "NONE",
+        "text": "I was just here for the coffee."
+      }
+    }
+  ],
+  "revealed": [
+    "D3"
+  ],
+  "difficulty": {
+    "waves": 9,
+    "sat_calls": 101
+  }
+}

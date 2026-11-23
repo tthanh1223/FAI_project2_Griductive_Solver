@@ -1,0 +1,231 @@
+{
+  "id": "g4_01",
+  "size": 4,
+  "cells": [
+    {
+      "cell": "A1",
+      "name": "Celia",
+      "job": "Singer",
+      "status": "INNOCENT",
+      "clue": {
+        "type": "SAME",
+        "a": "A1",
+        "b": "A3"
+      }
+    },
+    {
+      "cell": "B1",
+      "name": "Derek",
+      "job": "Pilot",
+      "status": "INNOCENT",
+      "clue": {
+        "type": "DIFFERENT",
+        "a": "C4",
+        "b": "B4"
+      }
+    },
+    {
+      "cell": "C1",
+      "name": "Elsa",
+      "job": "Singer",
+      "status": "INNOCENT",
+      "clue": {
+        "type": "COMPARE",
+        "r1": {
+          "kind": "neighbors",
+          "of": "C1"
+        },
+        "op": "<",
+        "r2": {
+          "kind": "neighbors",
+          "of": "D2"
+        }
+      }
+    },
+    {
+      "cell": "D1",
+      "name": "Franz",
+      "job": "Painter",
+      "status": "INNOCENT",
+      "clue": {
+        "type": "EXACTLY",
+        "k": 1,
+        "region": {
+          "kind": "row",
+          "row": 2
+        }
+      }
+    },
+    {
+      "cell": "A2",
+      "name": "Hannah",
+      "job": "Singer",
+      "status": "CRIMINAL",
+      "clue": {
+        "type": "DIFFERENT",
+        "a": "C4",
+        "b": "D3"
+      }
+    },
+    {
+      "cell": "B2",
+      "name": "Jade",
+      "job": "Doctor",
+      "status": "INNOCENT",
+      "clue": {
+        "type": "SAME",
+        "a": "B3",
+        "b": "D2"
+      }
+    },
+    {
+      "cell": "C2",
+      "name": "Jonas",
+      "job": "Guard",
+      "status": "INNOCENT",
+      "clue": {
+        "type": "SAME",
+        "a": "B2",
+        "b": "C2"
+      }
+    },
+    {
+      "cell": "D2",
+      "name": "Karl",
+      "job": "Pilot",
+      "status": "INNOCENT",
+      "clue": {
+        "type": "EXACTLY",
+        "k": 4,
+        "region": {
+          "kind": "neighbors",
+          "of": "D3"
+        },
+        "count": "innocent"
+      }
+    },
+    {
+      "cell": "A3",
+      "name": "Kira",
+      "job": "Singer",
+      "status": "INNOCENT",
+      "clue": {
+        "type": "PARITY",
+        "parity": "odd",
+        "region": {
+          "kind": "neighbors",
+          "of": "A4"
+        }
+      }
+    },
+    {
+      "cell": "B3",
+      "name": "Noah",
+      "job": "Farmer",
+      "status": "INNOCENT",
+      "clue": {
+        "type": "SAME",
+        "a": "C2",
+        "b": "B3"
+      }
+    },
+    {
+      "cell": "C3",
+      "name": "Priya",
+      "job": "Detective",
+      "status": "CRIMINAL",
+      "clue": {
+        "type": "COMPARE",
+        "r1": {
+          "kind": "row",
+          "row": 4
+        },
+        "op": ">",
+        "r2": {
+          "kind": "col",
+          "col": "B"
+        }
+      }
+    },
+    {
+      "cell": "D3",
+      "name": "Quilla",
+      "job": "Singer",
+      "status": "CRIMINAL",
+      "clue": {
+        "type": "DIFFERENT",
+        "a": "C1",
+        "b": "A4"
+      }
+    },
+    {
+      "cell": "A4",
+      "name": "Sophia",
+      "job": "Guard",
+      "status": "CRIMINAL",
+      "clue": {
+        "type": "EXACTLY",
+        "k": 0,
+        "region": {
+          "kind": "neighbors",
+          "of": "C1"
+        }
+      }
+    },
+    {
+      "cell": "B4",
+      "name": "Tom",
+      "job": "Painter",
+      "status": "CRIMINAL",
+      "clue": {
+        "type": "NONE",
+        "text": "I was just here for the coffee."
+      }
+    },
+    {
+      "cell": "C4",
+      "name": "Victor",
+      "job": "Astronaut",
+      "status": "INNOCENT",
+      "clue": {
+        "type": "EXACTLY",
+        "k": 1,
+        "region": {
+          "kind": "below",
+          "of": "D3"
+        },
+        "count": "innocent"
+      }
+    },
+    {
+      "cell": "D4",
+      "name": "Zane",
+      "job": "Pilot",
+      "status": "INNOCENT",
+      "clue": {
+        "type": "EXACTLY",
+        "k": 0,
+        "region": {
+          "kind": "inter",
+          "regions": [
+            {
+              "kind": "neighbors",
+              "of": "A2"
+            },
+            {
+              "kind": "row",
+              "row": 1
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "revealed": [
+    "C4"
+  ],
+  "difficulty": {
+    "waves": 13,
+    "sat_calls": 122
+  }
+}

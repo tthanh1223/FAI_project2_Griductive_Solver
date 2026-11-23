@@ -1,0 +1,388 @@
+{
+  "id": "g5_01",
+  "size": 5,
+  "cells": [
+    {
+      "cell": "A1",
+      "name": "Abel",
+      "job": "Painter",
+      "status": "INNOCENT",
+      "clue": {
+        "type": "SAME",
+        "a": "E5",
+        "b": "C3"
+      }
+    },
+    {
+      "cell": "B1",
+      "name": "Bea",
+      "job": "Painter",
+      "status": "INNOCENT",
+      "clue": {
+        "type": "SAME",
+        "a": "B5",
+        "b": "A3"
+      }
+    },
+    {
+      "cell": "C1",
+      "name": "Boris",
+      "job": "Painter",
+      "status": "CRIMINAL",
+      "clue": {
+        "type": "DIFFERENT",
+        "a": "E2",
+        "b": "E4"
+      }
+    },
+    {
+      "cell": "D1",
+      "name": "Celia",
+      "job": "Pilot",
+      "status": "CRIMINAL",
+      "clue": {
+        "type": "AT_MOST",
+        "k": 2,
+        "region": {
+          "kind": "corners"
+        }
+      }
+    },
+    {
+      "cell": "E1",
+      "name": "Eliza",
+      "job": "Judge",
+      "status": "INNOCENT",
+      "clue": {
+        "type": "FACT",
+        "who": "A2",
+        "status": "INNOCENT"
+      }
+    },
+    {
+      "cell": "A2",
+      "name": "Elsa",
+      "job": "Farmer",
+      "status": "INNOCENT",
+      "clue": {
+        "type": "EXACTLY",
+        "k": 0,
+        "region": {
+          "kind": "neighbors",
+          "of": "A5"
+        }
+      }
+    },
+    {
+      "cell": "B2",
+      "name": "Felix",
+      "job": "Cook",
+      "status": "CRIMINAL",
+      "clue": {
+        "type": "DIFFERENT",
+        "a": "C4",
+        "b": "E3"
+      }
+    },
+    {
+      "cell": "C2",
+      "name": "Hannah",
+      "job": "Painter",
+      "status": "INNOCENT",
+      "clue": {
+        "type": "DIFFERENT",
+        "a": "A1",
+        "b": "C3"
+      }
+    },
+    {
+      "cell": "D2",
+      "name": "Iris",
+      "job": "Doctor",
+      "status": "CRIMINAL",
+      "clue": {
+        "type": "DIFFERENT",
+        "a": "C1",
+        "b": "B1"
+      }
+    },
+    {
+      "cell": "E2",
+      "name": "Ivy",
+      "job": "Detective",
+      "status": "INNOCENT",
+      "clue": {
+        "type": "AND",
+        "parts": [
+          {
+            "type": "EXACTLY",
+            "k": 3,
+            "region": {
+              "kind": "below",
+              "of": "B2"
+            },
+            "count": "innocent"
+          },
+          {
+            "type": "CONNECTED",
+            "region": {
+              "kind": "below",
+              "of": "B2"
+            },
+            "count": "innocent"
+          }
+        ]
+      }
+    },
+    {
+      "cell": "A3",
+      "name": "Jade",
+      "job": "Baker",
+      "status": "INNOCENT",
+      "clue": {
+        "type": "EXACTLY",
+        "k": 1,
+        "region": {
+          "kind": "inter",
+          "regions": [
+            {
+              "kind": "neighbors",
+              "of": "D5"
+            },
+            {
+              "kind": "col",
+              "col": "D"
+            }
+          ]
+        },
+        "count": "innocent"
+      }
+    },
+    {
+      "cell": "B3",
+      "name": "Jonas",
+      "job": "Baker",
+      "status": "INNOCENT",
+      "clue": {
+        "type": "AT_MOST",
+        "k": 0,
+        "region": {
+          "kind": "below",
+          "of": "A4"
+        },
+        "count": "innocent"
+      }
+    },
+    {
+      "cell": "C3",
+      "name": "Kira",
+      "job": "Clerk",
+      "status": "CRIMINAL",
+      "clue": {
+        "type": "PARITY",
+        "parity": "even",
+        "region": {
+          "kind": "neighbors",
+          "of": "C3"
+        },
+        "count": "innocent"
+      }
+    },
+    {
+      "cell": "D3",
+      "name": "Leo",
+      "job": "Astronaut",
+      "status": "INNOCENT",
+      "clue": {
+        "type": "PARITY",
+        "parity": "even",
+        "region": {
+          "kind": "neighbors",
+          "of": "C3"
+        }
+      }
+    },
+    {
+      "cell": "E3",
+      "name": "Liam",
+      "job": "Guard",
+      "status": "CRIMINAL",
+      "clue": {
+        "type": "EXACTLY",
+        "k": 3,
+        "region": {
+          "kind": "neighbors",
+          "of": "E3"
+        },
+        "count": "innocent"
+      }
+    },
+    {
+      "cell": "A4",
+      "name": "Mara",
+      "job": "Pilot",
+      "status": "INNOCENT",
+      "clue": {
+        "type": "EXACTLY",
+        "k": 2,
+        "region": {
+          "kind": "neighbors",
+          "of": "B5"
+        }
+      }
+    },
+    {
+      "cell": "B4",
+      "name": "Mona",
+      "job": "Doctor",
+      "status": "INNOCENT",
+      "clue": {
+        "type": "SAME",
+        "a": "C3",
+        "b": "A5"
+      }
+    },
+    {
+      "cell": "C4",
+      "name": "Nina",
+      "job": "Painter",
+      "status": "INNOCENT",
+      "clue": {
+        "type": "PARITY",
+        "parity": "even",
+        "region": {
+          "kind": "between",
+          "a": "C1",
+          "b": "E1"
+        },
+        "count": "innocent"
+      }
+    },
+    {
+      "cell": "D4",
+      "name": "Owen",
+      "job": "Astronaut",
+      "status": "INNOCENT",
+      "clue": {
+        "type": "EXACTLY",
+        "k": 2,
+        "region": {
+          "kind": "inter",
+          "regions": [
+            {
+              "kind": "neighbors",
+              "of": "C5"
+            },
+            {
+              "kind": "neighbors",
+              "of": "B5"
+            }
+          ]
+        },
+        "count": "innocent"
+      }
+    },
+    {
+      "cell": "E4",
+      "name": "Priya",
+      "job": "Judge",
+      "status": "CRIMINAL",
+      "clue": {
+        "type": "SAME",
+        "a": "A5",
+        "b": "D5"
+      }
+    },
+    {
+      "cell": "A5",
+      "name": "Sophia",
+      "job": "Cook",
+      "status": "CRIMINAL",
+      "clue": {
+        "type": "EXACTLY",
+        "k": 2,
+        "region": {
+          "kind": "inter",
+          "regions": [
+            {
+              "kind": "neighbors",
+              "of": "D2"
+            },
+            {
+              "kind": "row",
+              "row": 2
+            }
+          ]
+        },
+        "count": "innocent"
+      }
+    },
+    {
+      "cell": "B5",
+      "name": "Tom",
+      "job": "Farmer",
+      "status": "INNOCENT",
+      "clue": {
+        "type": "COMPARE",
+        "r1": {
+          "kind": "row",
+          "row": 2
+        },
+        "op": ">",
+        "r2": {
+          "kind": "neighbors",
+          "of": "A1"
+        }
+      }
+    },
+    {
+      "cell": "C5",
+      "name": "Victor",
+      "job": "Judge",
+      "status": "CRIMINAL",
+      "clue": {
+        "type": "COMPARE",
+        "r1": {
+          "kind": "neighbors",
+          "of": "C5"
+        },
+        "op": ">",
+        "r2": {
+          "kind": "row",
+          "row": 2
+        },
+        "count": "innocent"
+      }
+    },
+    {
+      "cell": "D5",
+      "name": "Xavier",
+      "job": "Singer",
+      "status": "CRIMINAL",
+      "clue": {
+        "type": "CONNECTED",
+        "region": {
+          "kind": "right",
+          "of": "B5"
+        }
+      }
+    },
+    {
+      "cell": "E5",
+      "name": "Yara",
+      "job": "Detective",
+      "status": "CRIMINAL",
+      "clue": {
+        "type": "NONE",
+        "text": "Has anyone seen my umbrella?"
+      }
+    }
+  ],
+  "revealed": [
+    "E2"
+  ],
+  "difficulty": {
+    "waves": 13,
+    "sat_calls": 265
+  }
+}

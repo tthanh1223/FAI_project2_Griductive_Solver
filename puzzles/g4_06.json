@@ -1,0 +1,244 @@
+{
+  "id": "g4_06",
+  "size": 4,
+  "cells": [
+    {
+      "cell": "A1",
+      "name": "Abel",
+      "job": "Cook",
+      "status": "CRIMINAL",
+      "clue": {
+        "type": "COMPARE",
+        "r1": {
+          "kind": "neighbors",
+          "of": "B1"
+        },
+        "op": ">",
+        "r2": {
+          "kind": "col",
+          "col": "D"
+        },
+        "count": "innocent"
+      }
+    },
+    {
+      "cell": "B1",
+      "name": "Celia",
+      "job": "Singer",
+      "status": "CRIMINAL",
+      "clue": {
+        "type": "SAME",
+        "a": "B2",
+        "b": "A3"
+      }
+    },
+    {
+      "cell": "C1",
+      "name": "Clara",
+      "job": "Pilot",
+      "status": "CRIMINAL",
+      "clue": {
+        "type": "DIFFERENT",
+        "a": "C2",
+        "b": "B1"
+      }
+    },
+    {
+      "cell": "D1",
+      "name": "Dmitri",
+      "job": "Baker",
+      "status": "INNOCENT",
+      "clue": {
+        "type": "PARITY",
+        "parity": "odd",
+        "region": {
+          "kind": "row",
+          "row": 1
+        }
+      }
+    },
+    {
+      "cell": "A2",
+      "name": "Eliza",
+      "job": "Baker",
+      "status": "INNOCENT",
+      "clue": {
+        "type": "DIFFERENT",
+        "a": "A2",
+        "b": "B1"
+      }
+    },
+    {
+      "cell": "B2",
+      "name": "Grant",
+      "job": "Astronaut",
+      "status": "INNOCENT",
+      "clue": {
+        "type": "SAME",
+        "a": "D4",
+        "b": "C4"
+      }
+    },
+    {
+      "cell": "C2",
+      "name": "Greta",
+      "job": "Astronaut",
+      "status": "INNOCENT",
+      "clue": {
+        "type": "SAME",
+        "a": "A4",
+        "b": "A2"
+      }
+    },
+    {
+      "cell": "D2",
+      "name": "Hannah",
+      "job": "Astronaut",
+      "status": "CRIMINAL",
+      "clue": {
+        "type": "AT_MOST",
+        "k": 9,
+        "region": {
+          "kind": "all"
+        },
+        "count": "innocent"
+      }
+    },
+    {
+      "cell": "A3",
+      "name": "Jonas",
+      "job": "Guard",
+      "status": "INNOCENT",
+      "clue": {
+        "type": "AND",
+        "parts": [
+          {
+            "type": "EXACTLY",
+            "k": 3,
+            "region": {
+              "kind": "row",
+              "row": 1
+            }
+          },
+          {
+            "type": "CONNECTED",
+            "region": {
+              "kind": "row",
+              "row": 1
+            }
+          }
+        ]
+      }
+    },
+    {
+      "cell": "B3",
+      "name": "Leo",
+      "job": "Guard",
+      "status": "INNOCENT",
+      "clue": {
+        "type": "EXACTLY",
+        "k": 2,
+        "region": {
+          "kind": "neighbors",
+          "of": "D1"
+        }
+      }
+    },
+    {
+      "cell": "C3",
+      "name": "Mona",
+      "job": "Cook",
+      "status": "CRIMINAL",
+      "clue": {
+        "type": "AT_LEAST",
+        "k": 2,
+        "region": {
+          "kind": "inter",
+          "regions": [
+            {
+              "kind": "neighbors",
+              "of": "A1"
+            },
+            {
+              "kind": "row",
+              "row": 2
+            }
+          ]
+        },
+        "count": "innocent"
+      }
+    },
+    {
+      "cell": "D3",
+      "name": "Owen",
+      "job": "Painter",
+      "status": "INNOCENT",
+      "clue": {
+        "type": "SAME",
+        "a": "C2",
+        "b": "B3"
+      }
+    },
+    {
+      "cell": "A4",
+      "name": "Quilla",
+      "job": "Guard",
+      "status": "INNOCENT",
+      "clue": {
+        "type": "FACT",
+        "who": "D3",
+        "status": "INNOCENT"
+      }
+    },
+    {
+      "cell": "B4",
+      "name": "Wendy",
+      "job": "Doctor",
+      "status": "CRIMINAL",
+      "clue": {
+        "type": "COMPARE",
+        "r1": {
+          "kind": "col",
+          "col": "D"
+        },
+        "op": "<",
+        "r2": {
+          "kind": "row",
+          "row": 1
+        }
+      }
+    },
+    {
+      "cell": "C4",
+      "name": "Xavier",
+      "job": "Judge",
+      "status": "CRIMINAL",
+      "clue": {
+        "type": "EXACTLY",
+        "k": 2,
+        "region": {
+          "kind": "below",
+          "of": "B1"
+        },
+        "count": "innocent"
+      }
+    },
+    {
+      "cell": "D4",
+      "name": "Yara",
+      "job": "Clerk",
+      "status": "CRIMINAL",
+      "clue": {
+        "type": "NONE",
+        "text": "I have nothing to add."
+      }
+    }
+  ],
+  "revealed": [
+    "C3"
+  ],
+  "difficulty": {
+    "waves": 12,
+    "sat_calls": 112
+  }
+}

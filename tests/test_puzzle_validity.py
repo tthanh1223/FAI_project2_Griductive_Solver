@@ -23,6 +23,24 @@ def test_hand_written_puzzles_are_present():
 def test_core_clue_types_are_all_used():
     used = {c.clue["type"] for p in FILES for c in load_puzzle(p).cells}
     assert {"FACT", "SAME", "DIFFERENT", "EXACTLY", "AT_LEAST", "AT_MOST"} <= used
+    assert len(used & {"COMPARE", "CONNECTED", "PARITY", "AND", "COUNT_LINES"}) >= 2
+
+
+def test_puzzle_set_for_experiments():
+    sizes = [(p.rows, p.cols) for p in map(load_puzzle, FILES)]
+    assert sizes.count((3, 3)) >= 6 and sizes.count((4, 4)) >= 6 and sizes.count((5, 5)) >= 1
+
+
+@pytest.mark.parametrize("path", FILES, ids=lambda p: p.stem)
+def test_id_matches_file_name(path):
+    assert load_puzzle(path).id == path.stem
+
+
+def test_no_two_puzzles_are_the_same():
+    def content(p):
+        return (p.rows, p.cols, tuple((c.status, repr(c.clue)) for c in p.cells))
+    contents = [content(load_puzzle(p)) for p in FILES]
+    assert len(set(contents)) == len(contents)
 
 
 def test_puzzle_is_not_modified():

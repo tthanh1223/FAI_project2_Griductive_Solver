@@ -1,0 +1,149 @@
+{
+  "id": "g3_03",
+  "size": 3,
+  "cells": [
+    {
+      "cell": "A1",
+      "name": "Derek",
+      "job": "Astronaut",
+      "status": "CRIMINAL",
+      "clue": {
+        "type": "AND",
+        "parts": [
+          {
+            "type": "EXACTLY",
+            "k": 2,
+            "region": {
+              "kind": "row",
+              "row": 3
+            }
+          },
+          {
+            "type": "CONNECTED",
+            "region": {
+              "kind": "row",
+              "row": 3
+            }
+          }
+        ]
+      }
+    },
+    {
+      "cell": "B1",
+      "name": "Eliza",
+      "job": "Astronaut",
+      "status": "INNOCENT",
+      "clue": {
+        "type": "NONE",
+        "text": "I have nothing to add."
+      }
+    },
+    {
+      "cell": "C1",
+      "name": "Elsa",
+      "job": "Guard",
+      "status": "INNOCENT",
+      "clue": {
+        "type": "DIFFERENT",
+        "a": "B2",
+        "b": "B3"
+      }
+    },
+    {
+      "cell": "A2",
+      "name": "Mona",
+      "job": "Detective",
+      "status": "CRIMINAL",
+      "clue": {
+        "type": "EXACTLY",
+        "k": 1,
+        "region": {
+          "kind": "inter",
+          "regions": [
+            {
+              "kind": "neighbors",
+              "of": "C2"
+            },
+            {
+              "kind": "row",
+              "row": 2
+            }
+          ]
+        },
+        "count": "innocent"
+      }
+    },
+    {
+      "cell": "B2",
+      "name": "Owen",
+      "job": "Painter",
+      "status": "INNOCENT",
+      "clue": {
+        "type": "COMPARE",
+        "r1": {
+          "kind": "col",
+          "col": "C"
+        },
+        "op": "=",
+        "r2": {
+          "kind": "row",
+          "row": 2
+        }
+      }
+    },
+    {
+      "cell": "C2",
+      "name": "Roy",
+      "job": "Painter",
+      "status": "INNOCENT",
+      "clue": {
+        "type": "EXACTLY",
+        "k": 1,
+        "region": {
+          "kind": "row",
+          "row": 1
+        }
+      }
+    },
+    {
+      "cell": "A3",
+      "name": "Sophia",
+      "job": "Clerk",
+      "status": "INNOCENT",
+      "clue": {
+        "type": "DIFFERENT",
+        "a": "A2",
+        "b": "C2"
+      }
+    },
+    {
+      "cell": "B3",
+      "name": "Uma",
+      "job": "Doctor",
+      "status": "CRIMINAL",
+      "clue": {
+        "type": "SAME",
+        "a": "C3",
+        "b": "A1"
+      }
+    },
+    {
+      "cell": "C3",
+      "name": "Wendy",
+      "job": "Astronaut",
+      "status": "CRIMINAL",
+      "clue": {
+        "type": "SAME",
+        "a": "A2",
+        "b": "C3"
+      }
+    }
+  ],
+  "revealed": [
+    "C3"
+  ],
+  "difficulty": {
+    "waves": 8,
+    "sat_calls": 44
+  }
+}

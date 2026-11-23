@@ -49,6 +49,18 @@ Python 3.10+. Tkinter ships with Python.
 - Cell id = column letter + row number (`A1` top-left). `"size": N` or `"rows": R, "cols": C`.
 - `cells` in row-major order. `revealed` = cards face-up at the start (their status is known).
 
+### Puzzle set
+
+- Hand-written: `p3_01`, `p3_02`, `p3_03` (3×3), `p4x5_candle` (4 cols × 5 rows, docs/CLUES.md §7.1).
+- Generated (`g*`), seed 0; existing files are skipped unless `--force`:
+  ```bash
+  python -m puzzles.generate --rows 3 --cols 3 --count 6 --seed 0
+  python -m puzzles.generate --rows 4 --cols 4 --count 6 --seed 0
+  python -m puzzles.generate --rows 5 --cols 5 --count 2 --seed 0
+  ```
+- Check any puzzle (e.g. one copied by hand): `python -m puzzles.validate puzzles/p3_01.json`.
+  Valid = clues true on the solution, unique solution, solvable without guessing, names alphabetical.
+
 ### Clues
 
 Full definitions, CNF encodings, validation rules and test cases: **[docs/CLUES.md](docs/CLUES.md)**.

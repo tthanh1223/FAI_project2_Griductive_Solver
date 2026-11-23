@@ -1,0 +1,131 @@
+{
+  "id": "g3_05",
+  "size": 3,
+  "cells": [
+    {
+      "cell": "A1",
+      "name": "Derek",
+      "job": "Cook",
+      "status": "INNOCENT",
+      "clue": {
+        "type": "EXACTLY",
+        "k": 1,
+        "region": {
+          "kind": "col",
+          "col": "C"
+        }
+      }
+    },
+    {
+      "cell": "B1",
+      "name": "Greta",
+      "job": "Astronaut",
+      "status": "INNOCENT",
+      "clue": {
+        "type": "EXACTLY",
+        "k": 2,
+        "region": {
+          "kind": "col",
+          "col": "A"
+        }
+      }
+    },
+    {
+      "cell": "C1",
+      "name": "Hannah",
+      "job": "Judge",
+      "status": "CRIMINAL",
+      "clue": {
+        "type": "EXACTLY",
+        "k": 1,
+        "region": {
+          "kind": "below",
+          "of": "A2"
+        }
+      }
+    },
+    {
+      "cell": "A2",
+      "name": "Ivy",
+      "job": "Painter",
+      "status": "CRIMINAL",
+      "clue": {
+        "type": "AT_MOST",
+        "k": 0,
+        "region": {
+          "kind": "col",
+          "col": "B"
+        }
+      }
+    },
+    {
+      "cell": "B2",
+      "name": "Mara",
+      "job": "Singer",
+      "status": "INNOCENT",
+      "clue": {
+        "type": "EXACTLY",
+        "k": 1,
+        "region": {
+          "kind": "neighbors",
+          "of": "A1"
+        }
+      }
+    },
+    {
+      "cell": "C2",
+      "name": "Mona",
+      "job": "Astronaut",
+      "status": "INNOCENT",
+      "clue": {
+        "type": "SAME",
+        "a": "C1",
+        "b": "A2"
+      }
+    },
+    {
+      "cell": "A3",
+      "name": "Nina",
+      "job": "Clerk",
+      "status": "CRIMINAL",
+      "clue": {
+        "type": "DIFFERENT",
+        "a": "C2",
+        "b": "A3"
+      }
+    },
+    {
+      "cell": "B3",
+      "name": "Sophia",
+      "job": "Singer",
+      "status": "INNOCENT",
+      "clue": {
+        "type": "PARITY",
+        "parity": "odd",
+        "region": {
+          "kind": "between",
+          "a": "B3",
+          "b": "B1"
+        },
+        "count": "innocent"
+      }
+    },
+    {
+      "cell": "C3",
+      "name": "Uma",
+      "job": "Baker",
+      "status": "INNOCENT",
+      "clue": {
+        "type": "NONE",
+        "text": "I was just here for the coffee."
+      }
+    }
+  ],
+  "revealed": [
+    "C1"
+  ],
+  "difficulty": {
+    "waves": 6,
+    "sat_calls": 37
+  }
+}
