@@ -60,4 +60,7 @@ def main(paths: list[str]) -> int:
 
 
 if __name__ == "__main__":
+    # A redirected stdout uses the Windows code page (e.g. cp1252), which cannot encode
+    # every character of a path such as "TỐT NGHIỆP": escape those instead of crashing.
+    sys.stdout.reconfigure(errors="backslashreplace")
     sys.exit(main(sys.argv[1:]))

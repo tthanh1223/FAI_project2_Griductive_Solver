@@ -1,6 +1,8 @@
 """Tests for puzzles/validate.py, and every puzzle file in puzzles/ must be valid."""
 import copy
 import json
+import os
+import shutil
 import subprocess
 import sys
 from pathlib import Path
@@ -160,7 +162,20 @@ def test_command_line_checks_every_file(tmp_path):
     bad.write_text(json.dumps(data), encoding="utf-8")
     good = str(PUZZLES / "p3_01.json")
     run = subprocess.run([sys.executable, "-m", "puzzles.validate", good, str(bad)],
-                         cwd=ROOT, capture_output=True, text=True, encoding="utf-8")
+                         cwd=ROOT, capture_output=True, text=True, encoding="utf-8",
+                         env={**os.environ, "PYTHONIOENCODING": "utf-8"})   # paths may hold non-ASCII
     assert run.returncode == 1
     assert _status_lines(run.stdout) == {good: "OK", str(bad): "INVALID"}
     assert "without guessing" in run.stdout
+
+
+def test_command_line_does_not_crash_on_non_ascii_path_when_redirected(tmp_path):
+    """Default Windows code page for a pipe (cp1252) has no "Ố": output is escaped, not a crash."""
+    folder = tmp_path / "TỐT NGHIỆP"
+    folder.mkdir()
+    shutil.copy(PUZZLES / "p3_01.json", folder / "p3_01.json")
+    env = {k: v for k, v in os.environ.items() if k not in ("PYTHONIOENCODING", "PYTHONUTF8")}
+    run = subprocess.run([sys.executable, "-m", "puzzles.validate", str(folder / "p3_01.json")],
+                         cwd=ROOT, capture_output=True, env=env)
+    assert run.returncode == 0, run.stderr
+    assert run.stdout.startswith(b"OK ")
