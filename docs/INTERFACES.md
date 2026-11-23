@@ -54,6 +54,8 @@ Mọi ô clue nhắc tới hoặc đếm, để GUI tô sáng. `{"type":"SAME","
 
 ### `GameEngine(puzzle: Puzzle, agent: LogicAgent | None = None)`
 `agent` mặc định là `LogicAgent()`. Engine dùng agent để quyết verdict có được chấp nhận không.
+- Engine giữ **bản sao** của puzzle: sửa object `puzzle` sau khi tạo engine không ảnh hưởng gì.
+- Puzzle sai → `ValueError` ngay lúc tạo: ô không khớp lưới, status lạ, không có thẻ lật sẵn hoặc `revealed` có ô lạ, clue không qua `validate_clue`, hoặc **clue sai trên đáp án ẩn**. Nhờ vậy KB công khai không bao giờ mâu thuẫn.
 
 ### `public_state() -> PublicState`
 ```python
@@ -75,7 +77,7 @@ Mọi ô clue nhắc tới hoặc đếm, để GUI tô sáng. `{"type":"SAME","
   - `UNKNOWN` → **`NOT_PROVABLE`**, không đổi gì.
 - Ví dụ lúc đầu: `submit("A2","CRIMINAL")` → `"ACCEPTED"`; `submit("A2","INNOCENT")` → `"CONTRADICTED"`; `submit("B1","INNOCENT")` → `"NOT_PROVABLE"`.
 - Ô đã chốt / ô không tồn tại / verdict lạ → `ValueError`.
-- Sau `ACCEPTED`, engine `assert` verdict trùng đáp án ẩn (bắt lỗi encoder/agent sớm).
+- Sau `ACCEPTED`, engine kiểm verdict trùng đáp án ẩn, sai → `AssertionError`; agent trả `INCONSISTENT` hoặc thiếu ô → `RuntimeError` (đều là bug encoder/agent). Mọi lỗi đều để nguyên state.
 
 ### `restart() -> None` · `is_solved() -> bool`
 `restart` về đúng trạng thái lúc đầu. `is_solved` = mọi ô đã có verdict.
