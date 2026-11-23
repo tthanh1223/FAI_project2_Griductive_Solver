@@ -16,6 +16,7 @@ from pathlib import Path
 from tkinter import filedialog, messagebox
 
 from gui.clue_text import clue_to_text
+from gui.sound import Sfx
 from gui.theme import THEMES, make_fonts
 from gui.widgets import (AvatarCache, Banner, BoardView, ClueList, CrossedTapes, Divider, FlatButton,
                          LevelGrid, RoundPanel, StatsGrid, Tape)
@@ -84,6 +85,7 @@ class App:
         self.theme_name = "light"
         self.fonts = make_fonts(root)
         self.avatars = AvatarCache(root)
+        self.sfx = Sfx()
 
         self.engine = None           # engine.GameEngine of the current puzzle
         self.agent = None            # the LogicAgent the engine uses (shared with Hint / Step)
@@ -145,6 +147,7 @@ class App:
                 ("hint", "Hint", self.hint, "secondary"),
                 ("step", "Step", self.manual_step, "secondary"),
                 ("theme", "Theme", self.toggle_theme, "secondary"),
+                ("sound", self._sound_label(), self.toggle_sound, "secondary"),
                 ("auto", "Auto Solve", self.toggle_auto, "primary")):
             width = f["button"].measure("Auto Solve") + 30 if key == "auto" else None
             b = FlatButton(buttons, label, command, t, f, kind, bg=t["panel"], width=width)
@@ -274,9 +277,19 @@ class App:
                              (("i", "I"), lambda: self.submit_selected(INNOCENT)),
                              (("h", "H"), self.hint),
                              (("space",), self.manual_step),
+                             (("m", "M"), self.toggle_sound),
                              (("Escape",), self._escape)):
             for key in keys:
                 self.root.bind(f"<KeyPress-{key}>", lambda e, a=action: a())
+
+    def _sound_label(self):
+        return "Sound: On" if self.sfx.enabled else "Sound: Off"
+
+    def toggle_sound(self):
+        """Sound button / M key: mute or unmute the effects."""
+        self.sfx.toggle()
+        self.btn["sound"].set_text(self._sound_label())
+        self.sfx.play("select")
 
     def _escape(self):
         """Esc closes the win dialog or the level menu, otherwise clears selection and highlight."""
@@ -328,6 +341,7 @@ class App:
             self._render_buttons(self.state())
 
     def _pick_level(self, path):
+        self.sfx.play("select")
         self.hide_levels()
         if not self.load(path) and self.engine is None:
             self.show_levels()                    # load failed and there is no game behind the menu
@@ -385,6 +399,7 @@ class App:
         box = RoundPanel(self._body, t, pad=22, radius=14, bg=t["canvas"])
         box.place(relx=0.5, rely=0.45, anchor="center", width=500)
         tk.Misc.tkraise(box)          # Canvas.lift() raises canvas items, not the widget
+        self.sfx.play("win")
         Tape(box.body, t, f, text="CASE CLOSED  •  ").pack(fill="x")
         tk.Label(box.body, text="Puzzle solved!", font=f["title"], bg=t["panel"], fg=t["text"]).pack(anchor="w", pady=(16, 2))
         total = state["rows"] * state["cols"]
@@ -661,9 +676,13 @@ class App:
             self.clue_focus = [] if self.clue_focus == [cell] else [cell]
         elif self._auto_job is None:                        # face-down: choose it for a verdict
             self.selected = None if self.selected == cell else cell
+        else:
+            return
+        self.sfx.play("select")
         self.render()
 
     def click_clue(self, cell):
+        self.sfx.play("select")
         self.clue_focus = [] if self.clue_focus == [cell] else [cell]
         self.render()
 
@@ -694,6 +713,8 @@ class App:
             return None
         name = next(c["name"] for c in state["cells"] if c["cell"] == cell)
         if result == engine.ACCEPTED:
+            if not self._safe_is_solved():                  # the win dialog has its own sound
+                self.sfx.play("flip" if self._auto_job is not None else "accept")
             names = {c["cell"]: c["name"] for c in state["cells"]}
             self.trace.append({"step": len(self.trace) + 1, "cell": cell, "verdict": verdict, "active": active,
                                "sat": self.agent.stats["sat_calls"] - sat_before,
@@ -708,10 +729,12 @@ class App:
                                                    "and its clue joins the knowledge base.")
         elif result == engine.NOT_PROVABLE:
             self.mistakes += 1
+            self.sfx.play("not_provable")
             self.feedback = ("warn", "NOT_PROVABLE",
                              "Neither verdict is forced by the current clues. Card stays face-down.")
         else:
             self.mistakes += 1
+            self.sfx.play("contradicted")
             other = INNOCENT if verdict == CRIMINAL else CRIMINAL
             self.feedback = ("error", "CONTRADICTED",
                              f"The revealed clues prove {cell} ({name}) is {other}. Card stays face-down.")
@@ -740,6 +763,7 @@ class App:
             if rest:
                 text += " together with " + ", ".join(rest)
             self.hint_text = f"{text} → {h['cell']} can be proved {h['verdict']}."
+            self.sfx.play("hint")
             self.selected, self.clue_focus = h["cell"], list(h["because"])
         self.render()
 
@@ -768,6 +792,7 @@ class App:
 
     def _no_move(self, state):
         """No forced cell: the KB is INCONSISTENT, or the game is STUCK."""
+        self.sfx.play("not_provable")
         try:
             _, _, agent, _ = _game_api()
             inconsistent = self.agent.classify(state) == agent.INCONSISTENT
