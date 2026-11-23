@@ -16,7 +16,7 @@ from tkinter import filedialog, messagebox
 
 from gui.clue_text import clue_to_text
 from gui.theme import THEMES, make_fonts
-from gui.widgets import (AvatarCache, Banner, BoardView, ClueList, CrossedTapes, FlatButton,
+from gui.widgets import (AvatarCache, Banner, BoardView, ClueList, CrossedTapes, Divider, FlatButton,
                          RoundPanel, StatsGrid, Tape)
 from model import CRIMINAL, INNOCENT
 
@@ -26,7 +26,6 @@ _PUZZLE_DIR = Path(__file__).resolve().parent.parent / "puzzles"
 _AUTO_DELAY_MS = 400
 _READY = ("info", "Ready", "Select a face-down card, then choose CRIMINAL or INNOCENT.")
 _SIDE_PAD, _SIDE_GAP = 14, 12        # padding inside / gap between the right-hand panels
-_PANE_GAP = 10                       # space between each column and the divider
 _LEFT_MIN, _RIGHT_MIN = 360, 440     # the divider cannot squeeze a column below this
 
 
@@ -122,22 +121,23 @@ class App:
                                anchor="w", padx=20, pady=6)
         self.status.pack(fill="x")
 
-        # 3. body: board column | draggable divider (PanedWindow sash) | side column
+        # 3. body: board column | divider (drag it to resize) | side column
         body = tk.Frame(self.frame, bg=t["canvas"], padx=20, pady=20)
         body.pack(fill="both", expand=True)
-        self.paned = tk.PanedWindow(body, orient="horizontal", bg=t["border"], bd=0, sashwidth=6,
-                                    sashrelief="flat", showhandle=False, opaqueresize=True)
-        self.paned.pack(fill="both", expand=True)
-        left_pane = tk.Frame(self.paned, bg=t["canvas"])
-        right_pane = tk.Frame(self.paned, bg=t["canvas"])
-        self.paned.add(left_pane, minsize=_LEFT_MIN, stretch="never")
-        self.paned.add(right_pane, minsize=_RIGHT_MIN, stretch="always")
-        self.paned.bind("<ButtonRelease-1>", self._remember_sash, add="+")
-        self._left_pane = left_pane
+        body.rowconfigure(0, weight=1)
+        body.columnconfigure(2, weight=1)
+        self._body = body
+        self._left_pane = tk.Frame(body, bg=t["canvas"], width=600)
+        self._left_pane.grid(row=0, column=0, sticky="ns")
+        self._left_pane.pack_propagate(False)     # its width is set by the divider, not its content
+        Divider(body, t, self._drag_divider).grid(row=0, column=1, sticky="ns")
+        right_pane = tk.Frame(body, bg=t["canvas"])
+        right_pane.grid(row=0, column=2, sticky="nsew")
+        body.bind("<Configure>", self._keep_right_room, add="+")
 
         # left: board panel on top, decorative tapes in the space left below (pack shrinks them first)
-        self.left = tk.Frame(left_pane, bg=t["canvas"])
-        self.left.pack(fill="both", expand=True, padx=(0, _PANE_GAP))
+        self.left = tk.Frame(self._left_pane, bg=t["canvas"])
+        self.left.pack(fill="both", expand=True)
         self.board_panel = RoundPanel(self.left, t)
         self.board_panel.pack(side="top", anchor="nw")
         tk.Label(self.board_panel.body, text="Board", font=f["panel_title"], bg=t["panel"],
@@ -149,7 +149,7 @@ class App:
         self._left_size = None
 
         right = tk.Frame(right_pane, bg=t["canvas"])
-        right.pack(fill="both", expand=True, padx=(_PANE_GAP, 0))
+        right.pack(fill="both", expand=True)
         right.columnconfigure(0, weight=1)
         right.rowconfigure(1, weight=3, minsize=96)      # Revealed clues
         right.rowconfigure(4, weight=2, minsize=96)      # Deduction trace
@@ -249,23 +249,30 @@ class App:
         self._resize_job = None
         self.render()
 
-    def _remember_sash(self, _event=None):
-        """Keep the divider where the user dropped it (also across a theme switch)."""
-        self._sash_x = self.paned.sash_coord(0)[0]
-
     def _place_sash(self, x=None):
-        """Put the divider at x, or where the board has its normal card size (140 px)."""
+        """Set the board column to x px wide, or to the width where cards have their
+        normal size (140 px). Kept between the smallest board and the side column's minimum."""
         state = self.state()
         rows, cols = (state["rows"], state["cols"]) if state else (3, 3)
-        extra = 2 * self.board_panel.pad + _PANE_GAP
-        left_min = max(_LEFT_MIN, self.board.min_width(cols) + extra)   # smallest cards still fit
-        self.paned.paneconfigure(self._left_pane, minsize=left_min)
         if x is None:
-            x = (self.board.natural_width(rows, cols) if state else 560) + extra
-        self.paned.update_idletasks()
-        x = max(left_min, min(int(x), self.paned.winfo_width() - _RIGHT_MIN))
-        self.paned.sash_place(0, x, 1)
+            x = (self.board.natural_width(rows, cols) if state else 560) + 2 * self.board_panel.pad
+        self._body.update_idletasks()
+        low = max(_LEFT_MIN, self.board.min_width(cols) + 2 * self.board_panel.pad)
+        inner = self._body.winfo_width() - 40 - Divider.WIDTH       # minus the body padding
+        high = max(low, inner - _RIGHT_MIN) if inner > 0 else max(low, int(x))
+        x = max(low, min(int(x), high))
+        if int(self._left_pane["width"]) != x:
+            self._left_pane.configure(width=x)
         self._sash_x = x
+
+    def _drag_divider(self, x_root):
+        """Divider dragged: the board column ends where the pointer is."""
+        self._place_sash(x_root - self._left_pane.winfo_rootx() - Divider.WIDTH // 2)
+
+    def _keep_right_room(self, _event=None):
+        """Window resized: keep the divider inside the allowed range."""
+        if self._sash_x is not None:
+            self._place_sash(self._sash_x)
 
     # ================================================================ drawing
 

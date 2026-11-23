@@ -381,6 +381,35 @@ class ClueList(tk.Frame):
             self.scroll.pack_forget()
 
 
+class Divider(tk.Canvas):
+    """Draggable divider between the board column and the side column: a gap of the
+    window colour with a thin line and a small grip in the middle."""
+
+    WIDTH = 20
+
+    def __init__(self, master, theme, on_drag):
+        self.theme, self.on_drag, self.hover = theme, on_drag, False
+        super().__init__(master, width=self.WIDTH, height=10, bg=theme["canvas"], highlightthickness=0, bd=0,
+                         cursor="sb_h_double_arrow")
+        self.bind("<Configure>", lambda e: self._draw())
+        self.bind("<Enter>", lambda e: self._set_hover(True))
+        self.bind("<Leave>", lambda e: self._set_hover(False))
+        self.bind("<B1-Motion>", lambda e: self.on_drag(e.x_root))
+
+    def _set_hover(self, value):
+        self.hover = value
+        self._draw()
+
+    def _draw(self):
+        t = self.theme
+        w, h = self.winfo_width(), self.winfo_height()
+        self.delete("all")
+        colour = t["muted"] if self.hover else t["border"]
+        cx = w / 2
+        self.create_line(cx, 0, cx, h, fill=_mix(colour, t["canvas"], 0.4), width=1)
+        _round_rect(self, cx - 3, h / 2 - 24, cx + 3, h / 2 + 24, 3, fill=colour)
+
+
 # ---------------------------------------------------------------- crime-scene tape
 
 class Tape(tk.Canvas):
