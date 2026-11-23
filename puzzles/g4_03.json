@@ -1,0 +1,228 @@
+{
+  "id": "g4_03",
+  "size": 4,
+  "cells": [
+    {
+      "cell": "A1",
+      "name": "Abel",
+      "job": "Cook",
+      "status": "INNOCENT",
+      "clue": {
+        "type": "EXACTLY",
+        "k": 0,
+        "region": {
+          "kind": "col",
+          "col": "A"
+        }
+      }
+    },
+    {
+      "cell": "B1",
+      "name": "Alma",
+      "job": "Astronaut",
+      "status": "CRIMINAL",
+      "clue": {
+        "type": "PARITY",
+        "parity": "odd",
+        "region": {
+          "kind": "neighbors",
+          "of": "B1"
+        },
+        "count": "innocent"
+      }
+    },
+    {
+      "cell": "C1",
+      "name": "Felix",
+      "job": "Detective",
+      "status": "INNOCENT",
+      "clue": {
+        "type": "DIFFERENT",
+        "a": "A1",
+        "b": "D2"
+      }
+    },
+    {
+      "cell": "D1",
+      "name": "Hannah",
+      "job": "Clerk",
+      "status": "CRIMINAL",
+      "clue": {
+        "type": "EXACTLY",
+        "k": 3,
+        "region": {
+          "kind": "cells",
+          "cells": [
+            "D1",
+            "C2",
+            "D2",
+            "B3"
+          ]
+        }
+      }
+    },
+    {
+      "cell": "A2",
+      "name": "Hector",
+      "job": "Cook",
+      "status": "INNOCENT",
+      "clue": {
+        "type": "SAME",
+        "a": "C3",
+        "b": "D4"
+      }
+    },
+    {
+      "cell": "B2",
+      "name": "Ivy",
+      "job": "Astronaut",
+      "status": "CRIMINAL",
+      "clue": {
+        "type": "EXACTLY",
+        "k": 0,
+        "region": {
+          "kind": "below",
+          "of": "A2"
+        }
+      }
+    },
+    {
+      "cell": "C2",
+      "name": "Jonas",
+      "job": "Clerk",
+      "status": "CRIMINAL",
+      "clue": {
+        "type": "PARITY",
+        "parity": "even",
+        "region": {
+          "kind": "corners"
+        }
+      }
+    },
+    {
+      "cell": "D2",
+      "name": "Karl",
+      "job": "Singer",
+      "status": "CRIMINAL",
+      "clue": {
+        "type": "PARITY",
+        "parity": "odd",
+        "region": {
+          "kind": "above",
+          "of": "B2"
+        }
+      }
+    },
+    {
+      "cell": "A3",
+      "name": "Kira",
+      "job": "Guard",
+      "status": "INNOCENT",
+      "clue": {
+        "type": "DIFFERENT",
+        "a": "D4",
+        "b": "A1"
+      }
+    },
+    {
+      "cell": "B3",
+      "name": "Mara",
+      "job": "Doctor",
+      "status": "INNOCENT",
+      "clue": {
+        "type": "COMPARE",
+        "r1": {
+          "kind": "neighbors",
+          "of": "A2"
+        },
+        "op": "=",
+        "r2": {
+          "kind": "neighbors",
+          "of": "A3"
+        }
+      }
+    },
+    {
+      "cell": "C3",
+      "name": "Nina",
+      "job": "Clerk",
+      "status": "CRIMINAL",
+      "clue": {
+        "type": "SAME",
+        "a": "A4",
+        "b": "C1"
+      }
+    },
+    {
+      "cell": "D3",
+      "name": "Priya",
+      "job": "Clerk",
+      "status": "CRIMINAL",
+      "clue": {
+        "type": "COMPARE",
+        "r1": {
+          "kind": "row",
+          "row": 4
+        },
+        "op": "=",
+        "r2": {
+          "kind": "row",
+          "row": 3
+        },
+        "count": "innocent"
+      }
+    },
+    {
+      "cell": "A4",
+      "name": "Quilla",
+      "job": "Painter",
+      "status": "INNOCENT",
+      "clue": {
+        "type": "SAME",
+        "a": "D4",
+        "b": "B2"
+      }
+    },
+    {
+      "cell": "B4",
+      "name": "Roy",
+      "job": "Farmer",
+      "status": "CRIMINAL",
+      "clue": {
+        "type": "CONNECTED",
+        "region": {
+          "kind": "col",
+          "col": "D"
+        }
+      }
+    },
+    {
+      "cell": "C4",
+      "name": "Tom",
+      "job": "Teacher",
+      "status": "INNOCENT",
+      "clue": {
+        "type": "NONE",
+        "text": "I was just here for the coffee."
+      }
+    },
+    {
+      "cell": "D4",
+      "name": "Wendy",
+      "job": "Guard",
+      "status": "CRIMINAL",
+      "clue": {
+        "type": "FACT",
+        "who": "A4",
+        "status": "INNOCENT"
+      }
+    }
+  ],
+  "revealed": [
+    "D4"
+  ],
+  "difficulty": {
+    "waves": 15,
+    "sat_calls": 135
+  }
+}

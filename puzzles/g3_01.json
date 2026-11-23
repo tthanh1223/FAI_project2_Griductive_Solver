@@ -1,0 +1,152 @@
+{
+  "id": "g3_01",
+  "size": 3,
+  "cells": [
+    {
+      "cell": "A1",
+      "name": "Celia",
+      "job": "Detective",
+      "status": "INNOCENT",
+      "clue": {
+        "type": "EXACTLY",
+        "k": 2,
+        "region": {
+          "kind": "edges"
+        }
+      }
+    },
+    {
+      "cell": "B1",
+      "name": "Eliza",
+      "job": "Baker",
+      "status": "CRIMINAL",
+      "clue": {
+        "type": "PARITY",
+        "parity": "odd",
+        "region": {
+          "kind": "inter",
+          "regions": [
+            {
+              "kind": "neighbors",
+              "of": "C2"
+            },
+            {
+              "kind": "neighbors",
+              "of": "C3"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "cell": "C1",
+      "name": "Elsa",
+      "job": "Clerk",
+      "status": "INNOCENT",
+      "clue": {
+        "type": "AT_MOST",
+        "k": 0,
+        "region": {
+          "kind": "below",
+          "of": "C1"
+        }
+      }
+    },
+    {
+      "cell": "A2",
+      "name": "Felix",
+      "job": "Guard",
+      "status": "INNOCENT",
+      "clue": {
+        "type": "EXACTLY",
+        "k": 2,
+        "region": {
+          "kind": "inter",
+          "regions": [
+            {
+              "kind": "neighbors",
+              "of": "C2"
+            },
+            {
+              "kind": "neighbors",
+              "of": "B1"
+            }
+          ]
+        },
+        "count": "innocent"
+      }
+    },
+    {
+      "cell": "B2",
+      "name": "Greta",
+      "job": "Pilot",
+      "status": "INNOCENT",
+      "clue": {
+        "type": "EXACTLY",
+        "k": 1,
+        "region": {
+          "kind": "above",
+          "of": "B3"
+        }
+      }
+    },
+    {
+      "cell": "C2",
+      "name": "Liam",
+      "job": "Painter",
+      "status": "INNOCENT",
+      "clue": {
+        "type": "EXACTLY",
+        "k": 2,
+        "region": {
+          "kind": "cells",
+          "cells": [
+            "A1",
+            "B1",
+            "C2",
+            "B3"
+          ]
+        }
+      }
+    },
+    {
+      "cell": "A3",
+      "name": "Mara",
+      "job": "Cook",
+      "status": "INNOCENT",
+      "clue": {
+        "type": "NONE",
+        "text": "I was just here for the coffee."
+      }
+    },
+    {
+      "cell": "B3",
+      "name": "Noah",
+      "job": "Painter",
+      "status": "CRIMINAL",
+      "clue": {
+        "type": "SAME",
+        "a": "B2",
+        "b": "A2"
+      }
+    },
+    {
+      "cell": "C3",
+      "name": "Uma",
+      "job": "Astronaut",
+      "status": "INNOCENT",
+      "clue": {
+        "type": "SAME",
+        "a": "C3",
+        "b": "B2"
+      }
+    }
+  ],
+  "revealed": [
+    "C3"
+  ],
+  "difficulty": {
+    "waves": 8,
+    "sat_calls": 44
+  }
+}

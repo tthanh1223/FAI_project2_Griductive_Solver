@@ -1,0 +1,225 @@
+{
+  "id": "g4_02",
+  "size": 4,
+  "cells": [
+    {
+      "cell": "A1",
+      "name": "Abel",
+      "job": "Judge",
+      "status": "CRIMINAL",
+      "clue": {
+        "type": "EXACTLY",
+        "k": 1,
+        "region": {
+          "kind": "neighbors",
+          "of": "D4"
+        }
+      }
+    },
+    {
+      "cell": "B1",
+      "name": "Bea",
+      "job": "Guard",
+      "status": "INNOCENT",
+      "clue": {
+        "type": "SAME",
+        "a": "A3",
+        "b": "C2"
+      }
+    },
+    {
+      "cell": "C1",
+      "name": "Dmitri",
+      "job": "Farmer",
+      "status": "CRIMINAL",
+      "clue": {
+        "type": "PARITY",
+        "parity": "even",
+        "region": {
+          "kind": "neighbors",
+          "of": "D3"
+        }
+      }
+    },
+    {
+      "cell": "D1",
+      "name": "Felix",
+      "job": "Clerk",
+      "status": "INNOCENT",
+      "clue": {
+        "type": "NONE",
+        "text": "I have nothing to add."
+      }
+    },
+    {
+      "cell": "A2",
+      "name": "Greta",
+      "job": "Doctor",
+      "status": "CRIMINAL",
+      "clue": {
+        "type": "SAME",
+        "a": "A3",
+        "b": "D4"
+      }
+    },
+    {
+      "cell": "B2",
+      "name": "Jade",
+      "job": "Painter",
+      "status": "CRIMINAL",
+      "clue": {
+        "type": "FACT",
+        "who": "D4",
+        "status": "INNOCENT"
+      }
+    },
+    {
+      "cell": "C2",
+      "name": "Leo",
+      "job": "Judge",
+      "status": "INNOCENT",
+      "clue": {
+        "type": "AT_MOST",
+        "k": 0,
+        "region": {
+          "kind": "inter",
+          "regions": [
+            {
+              "kind": "neighbors",
+              "of": "B2"
+            },
+            {
+              "kind": "neighbors",
+              "of": "A4"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "cell": "D2",
+      "name": "Liam",
+      "job": "Singer",
+      "status": "CRIMINAL",
+      "clue": {
+        "type": "EXACTLY",
+        "k": 2,
+        "region": {
+          "kind": "neighbors",
+          "of": "A2"
+        }
+      }
+    },
+    {
+      "cell": "A3",
+      "name": "Owen",
+      "job": "Detective",
+      "status": "INNOCENT",
+      "clue": {
+        "type": "DIFFERENT",
+        "a": "D4",
+        "b": "C3"
+      }
+    },
+    {
+      "cell": "B3",
+      "name": "Priya",
+      "job": "Baker",
+      "status": "INNOCENT",
+      "clue": {
+        "type": "AT_MOST",
+        "k": 0,
+        "region": {
+          "kind": "below",
+          "of": "B3"
+        },
+        "count": "innocent"
+      }
+    },
+    {
+      "cell": "C3",
+      "name": "Quilla",
+      "job": "Detective",
+      "status": "CRIMINAL",
+      "clue": {
+        "type": "FACT",
+        "who": "C4",
+        "status": "INNOCENT"
+      }
+    },
+    {
+      "cell": "D3",
+      "name": "Roy",
+      "job": "Astronaut",
+      "status": "INNOCENT",
+      "clue": {
+        "type": "EXACTLY",
+        "k": 2,
+        "region": {
+          "kind": "row",
+          "row": 1
+        }
+      }
+    },
+    {
+      "cell": "A4",
+      "name": "Tom",
+      "job": "Painter",
+      "status": "INNOCENT",
+      "clue": {
+        "type": "PARITY",
+        "parity": "odd",
+        "region": {
+          "kind": "above",
+          "of": "C3"
+        }
+      }
+    },
+    {
+      "cell": "B4",
+      "name": "Wendy",
+      "job": "Farmer",
+      "status": "CRIMINAL",
+      "clue": {
+        "type": "PARITY",
+        "parity": "odd",
+        "region": {
+          "kind": "left",
+          "of": "C4"
+        }
+      }
+    },
+    {
+      "cell": "C4",
+      "name": "Xavier",
+      "job": "Baker",
+      "status": "INNOCENT",
+      "clue": {
+        "type": "EXACTLY",
+        "k": 2,
+        "region": {
+          "kind": "neighbors",
+          "of": "A1"
+        }
+      }
+    },
+    {
+      "cell": "D4",
+      "name": "Zane",
+      "job": "Judge",
+      "status": "INNOCENT",
+      "clue": {
+        "type": "SAME",
+        "a": "A2",
+        "b": "B2"
+      }
+    }
+  ],
+  "revealed": [
+    "B2"
+  ],
+  "difficulty": {
+    "waves": 15,
+    "sat_calls": 135
+  }
+}

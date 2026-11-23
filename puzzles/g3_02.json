@@ -1,0 +1,135 @@
+{
+  "id": "g3_02",
+  "size": 3,
+  "cells": [
+    {
+      "cell": "A1",
+      "name": "Abel",
+      "job": "Baker",
+      "status": "INNOCENT",
+      "clue": {
+        "type": "COMPARE",
+        "r1": {
+          "kind": "row",
+          "row": 2
+        },
+        "op": "<",
+        "r2": {
+          "kind": "neighbors",
+          "of": "B1"
+        }
+      }
+    },
+    {
+      "cell": "B1",
+      "name": "Alma",
+      "job": "Painter",
+      "status": "INNOCENT",
+      "clue": {
+        "type": "SAME",
+        "a": "B2",
+        "b": "B1"
+      }
+    },
+    {
+      "cell": "C1",
+      "name": "Derek",
+      "job": "Singer",
+      "status": "CRIMINAL",
+      "clue": {
+        "type": "SAME",
+        "a": "C2",
+        "b": "B3"
+      }
+    },
+    {
+      "cell": "A2",
+      "name": "Dmitri",
+      "job": "Guard",
+      "status": "INNOCENT",
+      "clue": {
+        "type": "NONE",
+        "text": "Has anyone seen my umbrella?"
+      }
+    },
+    {
+      "cell": "B2",
+      "name": "Grant",
+      "job": "Teacher",
+      "status": "INNOCENT",
+      "clue": {
+        "type": "COMPARE",
+        "r1": {
+          "kind": "neighbors",
+          "of": "B2"
+        },
+        "op": ">",
+        "r2": {
+          "kind": "neighbors",
+          "of": "C1"
+        }
+      }
+    },
+    {
+      "cell": "C2",
+      "name": "Hannah",
+      "job": "Detective",
+      "status": "INNOCENT",
+      "clue": {
+        "type": "PARITY",
+        "parity": "odd",
+        "region": {
+          "kind": "left",
+          "of": "B1"
+        },
+        "count": "innocent"
+      }
+    },
+    {
+      "cell": "A3",
+      "name": "Mara",
+      "job": "Cook",
+      "status": "CRIMINAL",
+      "clue": {
+        "type": "EXACTLY",
+        "k": 0,
+        "region": {
+          "kind": "below",
+          "of": "C1"
+        }
+      }
+    },
+    {
+      "cell": "B3",
+      "name": "Tom",
+      "job": "Pilot",
+      "status": "INNOCENT",
+      "clue": {
+        "type": "DIFFERENT",
+        "a": "B1",
+        "b": "A3"
+      }
+    },
+    {
+      "cell": "C3",
+      "name": "Xavier",
+      "job": "Singer",
+      "status": "INNOCENT",
+      "clue": {
+        "type": "EXACTLY",
+        "k": 0,
+        "region": {
+          "kind": "row",
+          "row": 2
+        }
+      }
+    }
+  ],
+  "revealed": [
+    "A3"
+  ],
+  "difficulty": {
+    "waves": 5,
+    "sat_calls": 38
+  }
+}

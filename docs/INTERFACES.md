@@ -54,6 +54,8 @@ Mọi ô clue nhắc tới hoặc đếm, để GUI tô sáng. `{"type":"SAME","
 
 ### `GameEngine(puzzle: Puzzle, agent: LogicAgent | None = None)`
 `agent` mặc định là `LogicAgent()`. Engine dùng agent để quyết verdict có được chấp nhận không.
+- Engine giữ **bản sao** của puzzle: sửa object `puzzle` sau khi tạo engine không ảnh hưởng gì.
+- Puzzle sai → `ValueError` ngay lúc tạo: ô không khớp lưới, status lạ, không có thẻ lật sẵn hoặc `revealed` có ô lạ, clue không qua `validate_clue`, hoặc **clue sai trên đáp án ẩn**. Nhờ vậy KB công khai không bao giờ mâu thuẫn.
 
 ### `public_state() -> PublicState`
 ```python
@@ -75,10 +77,22 @@ Mọi ô clue nhắc tới hoặc đếm, để GUI tô sáng. `{"type":"SAME","
   - `UNKNOWN` → **`NOT_PROVABLE`**, không đổi gì.
 - Ví dụ lúc đầu: `submit("A2","CRIMINAL")` → `"ACCEPTED"`; `submit("A2","INNOCENT")` → `"CONTRADICTED"`; `submit("B1","INNOCENT")` → `"NOT_PROVABLE"`.
 - Ô đã chốt / ô không tồn tại / verdict lạ → `ValueError`.
-- Sau `ACCEPTED`, engine `assert` verdict trùng đáp án ẩn (bắt lỗi encoder/agent sớm).
+- Sau `ACCEPTED`, engine kiểm verdict trùng đáp án ẩn, sai → `AssertionError`; agent trả `INCONSISTENT` hoặc thiếu ô → `RuntimeError` (đều là bug encoder/agent). Mọi lỗi đều để nguyên state.
 
 ### `restart() -> None` · `is_solved() -> bool`
 `restart` về đúng trạng thái lúc đầu. `is_solved` = mọi ô đã có verdict.
+
+## puzzles/validate.py (Engine & Puzzle)
+
+### `puzzle_problems(puzzle: Puzzle) -> list[str]`
+Mọi lý do puzzle không hợp lệ, `[]` = hợp lệ. Hợp lệ = `GameEngine` nhận (clue đúng trên đáp án) + `check_unique` + agent giải hết không đoán (STUCK là không hợp lệ) + tên tăng dần theo alphabet theo row-major. Không sửa `puzzle`.
+Dòng lệnh: `python -m puzzles.validate puzzles/p3_01.json ...` (exit 1 nếu có file không hợp lệ). Dùng để kiểm puzzle chép tay.
+
+## puzzles/generate.py (Engine & Puzzle)
+
+### `generate(rows, cols, seed, index) -> dict`
+Puzzle số `index` (dict JSON, id `g3_01`; lưới chữ nhật ghi cột × hàng như `p4x5_candle`: 5 cột × 4 hàng → `g5x4_01`), đã qua `puzzle_problems`, kèm `"difficulty": {"waves", "sat_calls"}` (`load_puzzle` bỏ qua key này). Cùng tham số → cùng puzzle.
+Dòng lệnh: `python -m puzzles.generate --rows 4 --cols 4 --count 6 --seed 0` ghi `puzzles/g4_01.json` …; file đã có thì bỏ qua, trừ khi thêm `--force`.
 
 ## encoder.py (Encoder)
 

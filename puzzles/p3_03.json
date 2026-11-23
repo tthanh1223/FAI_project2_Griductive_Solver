@@ -1,0 +1,129 @@
+{
+  "id": "p3_03",
+  "size": 3,
+  "cells": [
+    {
+      "cell": "A1",
+      "name": "Alma",
+      "job": "Singer",
+      "status": "CRIMINAL",
+      "clue": {
+        "type": "SAME",
+        "a": "B2",
+        "b": "B3"
+      }
+    },
+    {
+      "cell": "B1",
+      "name": "Boris",
+      "job": "Judge",
+      "status": "INNOCENT",
+      "clue": {
+        "type": "AT_LEAST",
+        "k": 2,
+        "region": {
+          "kind": "row",
+          "row": 1
+        }
+      }
+    },
+    {
+      "cell": "C1",
+      "name": "Celia",
+      "job": "Pilot",
+      "status": "CRIMINAL",
+      "clue": {
+        "type": "EXACTLY",
+        "k": 1,
+        "region": {
+          "kind": "col",
+          "col": "C"
+        }
+      }
+    },
+    {
+      "cell": "A2",
+      "name": "Dmitri",
+      "job": "Coder",
+      "status": "INNOCENT",
+      "clue": {
+        "type": "AT_LEAST",
+        "k": 3,
+        "region": {
+          "kind": "neighbors",
+          "of": "A2"
+        }
+      }
+    },
+    {
+      "cell": "B2",
+      "name": "Elsa",
+      "job": "Nurse",
+      "status": "CRIMINAL",
+      "clue": {
+        "type": "AT_MOST",
+        "k": 1,
+        "region": {
+          "kind": "row",
+          "row": 2
+        }
+      }
+    },
+    {
+      "cell": "C2",
+      "name": "Felix",
+      "job": "Sheriff",
+      "status": "INNOCENT",
+      "clue": {
+        "type": "EXACTLY",
+        "k": 3,
+        "region": {
+          "kind": "neighbors",
+          "of": "C2"
+        }
+      }
+    },
+    {
+      "cell": "A3",
+      "name": "Greta",
+      "job": "Florist",
+      "status": "INNOCENT",
+      "clue": {
+        "type": "EXACTLY",
+        "k": 2,
+        "region": {
+          "kind": "neighbors",
+          "of": "A3"
+        }
+      }
+    },
+    {
+      "cell": "B3",
+      "name": "Hector",
+      "job": "Mechanic",
+      "status": "CRIMINAL",
+      "clue": {
+        "type": "EXACTLY",
+        "k": 0,
+        "region": {
+          "kind": "left",
+          "of": "B3"
+        }
+      }
+    },
+    {
+      "cell": "C3",
+      "name": "Iris",
+      "job": "Teacher",
+      "status": "INNOCENT",
+      "clue": {
+        "type": "DIFFERENT",
+        "a": "A2",
+        "b": "B2"
+      }
+    }
+  ],
+  "revealed": [
+    "B1"
+  ]
+}

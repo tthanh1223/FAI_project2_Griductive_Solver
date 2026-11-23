@@ -1,0 +1,148 @@
+{
+  "id": "g3_06",
+  "size": 3,
+  "cells": [
+    {
+      "cell": "A1",
+      "name": "Abel",
+      "job": "Guard",
+      "status": "INNOCENT",
+      "clue": {
+        "type": "EXACTLY",
+        "k": 2,
+        "region": {
+          "kind": "cells",
+          "cells": [
+            "A2",
+            "C2",
+            "A3",
+            "C3"
+          ]
+        }
+      }
+    },
+    {
+      "cell": "B1",
+      "name": "Bea",
+      "job": "Doctor",
+      "status": "INNOCENT",
+      "clue": {
+        "type": "SAME",
+        "a": "C3",
+        "b": "A2"
+      }
+    },
+    {
+      "cell": "C1",
+      "name": "Celia",
+      "job": "Painter",
+      "status": "CRIMINAL",
+      "clue": {
+        "type": "PARITY",
+        "parity": "odd",
+        "region": {
+          "kind": "col",
+          "col": "A"
+        }
+      }
+    },
+    {
+      "cell": "A2",
+      "name": "Clara",
+      "job": "Clerk",
+      "status": "CRIMINAL",
+      "clue": {
+        "type": "SAME",
+        "a": "A3",
+        "b": "B1"
+      }
+    },
+    {
+      "cell": "B2",
+      "name": "Dmitri",
+      "job": "Painter",
+      "status": "INNOCENT",
+      "clue": {
+        "type": "NONE",
+        "text": "I have nothing to add."
+      }
+    },
+    {
+      "cell": "C2",
+      "name": "Hannah",
+      "job": "Cook",
+      "status": "INNOCENT",
+      "clue": {
+        "type": "COMPARE",
+        "r1": {
+          "kind": "row",
+          "row": 3
+        },
+        "op": ">",
+        "r2": {
+          "kind": "neighbors",
+          "of": "A2"
+        }
+      }
+    },
+    {
+      "cell": "A3",
+      "name": "Jade",
+      "job": "Pilot",
+      "status": "INNOCENT",
+      "clue": {
+        "type": "COMPARE",
+        "r1": {
+          "kind": "neighbors",
+          "of": "A3"
+        },
+        "op": "=",
+        "r2": {
+          "kind": "neighbors",
+          "of": "A1"
+        }
+      }
+    },
+    {
+      "cell": "B3",
+      "name": "Liam",
+      "job": "Teacher",
+      "status": "INNOCENT",
+      "clue": {
+        "type": "SAME",
+        "a": "C1",
+        "b": "C3"
+      }
+    },
+    {
+      "cell": "C3",
+      "name": "Wendy",
+      "job": "Teacher",
+      "status": "CRIMINAL",
+      "clue": {
+        "type": "PARITY",
+        "parity": "even",
+        "region": {
+          "kind": "inter",
+          "regions": [
+            {
+              "kind": "neighbors",
+              "of": "A1"
+            },
+            {
+              "kind": "row",
+              "row": 1
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "revealed": [
+    "C3"
+  ],
+  "difficulty": {
+    "waves": 8,
+    "sat_calls": 44
+  }
+}

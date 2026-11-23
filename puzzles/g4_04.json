@@ -1,0 +1,240 @@
+{
+  "id": "g4_04",
+  "size": 4,
+  "cells": [
+    {
+      "cell": "A1",
+      "name": "Grant",
+      "job": "Singer",
+      "status": "CRIMINAL",
+      "clue": {
+        "type": "DIFFERENT",
+        "a": "B3",
+        "b": "C3"
+      }
+    },
+    {
+      "cell": "B1",
+      "name": "Hannah",
+      "job": "Judge",
+      "status": "INNOCENT",
+      "clue": {
+        "type": "EXACTLY",
+        "k": 1,
+        "region": {
+          "kind": "inter",
+          "regions": [
+            {
+              "kind": "neighbors",
+              "of": "B3"
+            },
+            {
+              "kind": "row",
+              "row": 4
+            }
+          ]
+        }
+      }
+    },
+    {
+      "cell": "C1",
+      "name": "Hector",
+      "job": "Clerk",
+      "status": "INNOCENT",
+      "clue": {
+        "type": "SAME",
+        "a": "A2",
+        "b": "C4"
+      }
+    },
+    {
+      "cell": "D1",
+      "name": "Iris",
+      "job": "Farmer",
+      "status": "INNOCENT",
+      "clue": {
+        "type": "AT_LEAST",
+        "k": 3,
+        "region": {
+          "kind": "neighbors",
+          "of": "B1"
+        }
+      }
+    },
+    {
+      "cell": "A2",
+      "name": "Ivy",
+      "job": "Baker",
+      "status": "CRIMINAL",
+      "clue": {
+        "type": "EXACTLY",
+        "k": 2,
+        "region": {
+          "kind": "neighbors",
+          "of": "A2"
+        },
+        "count": "innocent"
+      }
+    },
+    {
+      "cell": "B2",
+      "name": "Karl",
+      "job": "Judge",
+      "status": "INNOCENT",
+      "clue": {
+        "type": "SAME",
+        "a": "B1",
+        "b": "C1"
+      }
+    },
+    {
+      "cell": "C2",
+      "name": "Kira",
+      "job": "Cook",
+      "status": "CRIMINAL",
+      "clue": {
+        "type": "AT_LEAST",
+        "k": 2,
+        "region": {
+          "kind": "neighbors",
+          "of": "C2"
+        }
+      }
+    },
+    {
+      "cell": "D2",
+      "name": "Liam",
+      "job": "Cook",
+      "status": "INNOCENT",
+      "clue": {
+        "type": "EXACTLY",
+        "k": 1,
+        "region": {
+          "kind": "below",
+          "of": "D3"
+        },
+        "count": "innocent"
+      }
+    },
+    {
+      "cell": "A3",
+      "name": "Noah",
+      "job": "Doctor",
+      "status": "CRIMINAL",
+      "clue": {
+        "type": "PARITY",
+        "parity": "even",
+        "region": {
+          "kind": "inter",
+          "regions": [
+            {
+              "kind": "neighbors",
+              "of": "B3"
+            },
+            {
+              "kind": "col",
+              "col": "B"
+            }
+          ]
+        },
+        "count": "innocent"
+      }
+    },
+    {
+      "cell": "B3",
+      "name": "Owen",
+      "job": "Clerk",
+      "status": "CRIMINAL",
+      "clue": {
+        "type": "EXACTLY",
+        "k": 1,
+        "region": {
+          "kind": "col",
+          "col": "B"
+        }
+      }
+    },
+    {
+      "cell": "C3",
+      "name": "Quilla",
+      "job": "Farmer",
+      "status": "INNOCENT",
+      "clue": {
+        "type": "DIFFERENT",
+        "a": "A3",
+        "b": "D2"
+      }
+    },
+    {
+      "cell": "D3",
+      "name": "Tom",
+      "job": "Singer",
+      "status": "CRIMINAL",
+      "clue": {
+        "type": "AT_LEAST",
+        "k": 3,
+        "region": {
+          "kind": "row",
+          "row": 4
+        },
+        "count": "innocent"
+      }
+    },
+    {
+      "cell": "A4",
+      "name": "Uma",
+      "job": "Clerk",
+      "status": "INNOCENT",
+      "clue": {
+        "type": "EXACTLY",
+        "k": 2,
+        "region": {
+          "kind": "left",
+          "of": "C3"
+        }
+      }
+    },
+    {
+      "cell": "B4",
+      "name": "Victor",
+      "job": "Doctor",
+      "status": "INNOCENT",
+      "clue": {
+        "type": "SAME",
+        "a": "D1",
+        "b": "B1"
+      }
+    },
+    {
+      "cell": "C4",
+      "name": "Wendy",
+      "job": "Teacher",
+      "status": "CRIMINAL",
+      "clue": {
+        "type": "AT_MOST",
+        "k": 1,
+        "region": {
+          "kind": "row",
+          "row": 1
+        }
+      }
+    },
+    {
+      "cell": "D4",
+      "name": "Yara",
+      "job": "Astronaut",
+      "status": "INNOCENT",
+      "clue": {
+        "type": "NONE",
+        "text": "I was just here for the coffee."
+      }
+    }
+  ],
+  "revealed": [
+    "A4"
+  ],
+  "difficulty": {
+    "waves": 7,
+    "sat_calls": 110
+  }
+}
