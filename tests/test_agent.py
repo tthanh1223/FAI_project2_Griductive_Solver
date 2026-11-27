@@ -1,9 +1,7 @@
 """Tests for agent.py (DPLL & Agent owner).
 
-The real GameEngine / load_puzzle / encoder may still be stubs: every test that
-needs one is skipped until it lands (same call() trick as test_contracts.py).
 _MiniEngine below follows the engine contract in docs/INTERFACES.md, so the
-agent can be tested before engine.py exists.
+agent is also tested without the real GameEngine.
 """
 import copy
 import itertools
@@ -19,13 +17,6 @@ from model import CRIMINAL, INNOCENT, Cell, Puzzle
 P3 = Path(__file__).resolve().parents[1] / "puzzles" / "p3_01.json"
 SOLUTION_ORDER = [("A2", "CRIMINAL"), ("A3", "INNOCENT"), ("C2", "INNOCENT"), ("B2", "CRIMINAL"),
                   ("C3", "CRIMINAL"), ("B1", "INNOCENT"), ("C1", "INNOCENT"), ("B3", "INNOCENT")]
-
-
-def call(fn, *args, **kwargs):
-    try:
-        return fn(*args, **kwargs)
-    except NotImplementedError as e:
-        pytest.skip(f"needs a function that is not implemented yet ({e or fn.__qualname__})")
 
 
 def names(rows, cols):
@@ -86,7 +77,7 @@ def brute_force_classify(st):
     for bits in itertools.product((False, True), repeat=len(free)):
         a = dict(fixed)
         a.update(zip(free, bits))
-        if all(call(evaluate_clue, clue, a, rows, cols) for clue in st["revealed"].values()):
+        if all(evaluate_clue(clue, a, rows, cols) for clue in st["revealed"].values()):
             models.append(a)
     if not models:
         return INCONSISTENT
@@ -142,17 +133,17 @@ def random_true_clue(rng, rows, cols, solution, types=ALL_TYPES):
                     "r2": random_region(rng, rows, cols), "count": count}
         else:
             region = random_region(rng, rows, cols)
-            n = sum(1 for c in call(_region, region, rows, cols) if solution[c] == (count == "criminal"))
+            n = sum(1 for c in _region(region, rows, cols) if solution[c] == (count == "criminal"))
             clue = {"type": t, "region": region, "count": count, "k": n}
             if t == "AT_LEAST":
                 clue["k"] = rng.randint(0, n)
             elif t == "AT_MOST":
-                clue["k"] = rng.randint(n, len(call(_region, region, rows, cols)))
+                clue["k"] = rng.randint(n, len(_region(region, rows, cols)))
         try:
-            call(validate_clue, clue, rows, cols)
+            validate_clue(clue, rows, cols)
         except ValueError:
             continue
-        if call(evaluate_clue, clue, solution, rows, cols):
+        if evaluate_clue(clue, solution, rows, cols):
             return clue
 
 
@@ -175,7 +166,7 @@ def random_state(seed):
     """A mid-game public state: some face-up clues and their verdicts (all true)."""
     rng = random.Random(seed)
     rows, cols = rng.choice([(2, 2), (2, 3), (3, 3), (3, 4)])
-    puzzle, solution = random_puzzle(seed, rows, cols, rng.randint(1, min(4, rows * cols)))
+    puzzle, _ = random_puzzle(seed, rows, cols, rng.randint(1, min(4, rows * cols)))
     by = {c.cell: c for c in puzzle.cells}
     revealed = {c: by[c].clue for c in puzzle.revealed}
     verdicts = {c: by[c].status for c in puzzle.revealed}
@@ -187,7 +178,7 @@ def random_state(seed):
 def test_p3_initial_classify_next_move_hint():
     e = _MiniEngine(p3_puzzle())
     a = e.agent
-    cls = call(a.classify, e.public_state())
+    cls = a.classify(e.public_state())
     assert list(cls) == ["B1", "C1", "A2", "B2", "C2", "A3", "B3", "C3"]
     assert cls == {c: (CRIMINAL if c == "A2" else UNKNOWN) for c in cls}
     assert a.next_move(e.public_state()) == {"cell": "A2", "verdict": "CRIMINAL"}
@@ -196,7 +187,7 @@ def test_p3_initial_classify_next_move_hint():
 
 def test_p3_solve_trace():
     e = _MiniEngine(p3_puzzle())
-    r = call(e.agent.solve, e)
+    r = e.agent.solve(e)
     assert r["status"] == "SOLVED" and e.is_solved()
     assert [(s["cell"], s["verdict"]) for s in r["steps"]] == SOLUTION_ORDER
     assert [s["step"] for s in r["steps"]] == list(range(1, 9))
@@ -214,7 +205,7 @@ def test_p3_sat_calls_per_step():
     """Optimized: at most 1 + unsolved per step. Plain: exactly 1 + 2 * unsolved."""
     for optimized in (True, False):
         e = _MiniEngine(p3_puzzle(), LogicAgent(optimized=optimized))
-        r = call(e.agent.solve, e)
+        r = e.agent.solve(e)
         for s in r["steps"]:
             unsolved = 9 - s["step"]                   # A1 is face-up, one more verdict per step
             if optimized:
@@ -224,7 +215,7 @@ def test_p3_sat_calls_per_step():
 
 
 def test_p3_check_unique():
-    assert call(check_unique, p3_puzzle()) is True
+    assert check_unique(p3_puzzle()) is True
 
 
 # ---------- agent against brute force ----------
@@ -234,7 +225,7 @@ def test_classify_matches_brute_force(seed):
     st = random_state(seed)
     expected = brute_force_classify(st)
     for optimized in (True, False):
-        got = call(LogicAgent(optimized=optimized).classify, copy.deepcopy(st))
+        got = LogicAgent(optimized=optimized).classify(copy.deepcopy(st))
         assert got == expected, (optimized, st)
         if isinstance(got, dict):
             assert list(got) == [c for c in names(st["rows"], st["cols"]) if c not in st["verdicts"]]
@@ -244,7 +235,7 @@ def test_classify_matches_brute_force(seed):
 def test_hint_because_is_minimal_and_sufficient(seed):
     st = random_state(seed)
     a = LogicAgent()
-    h = call(a.hint, st)
+    h = a.hint(st)
     if h is None:
         assert a.next_move(st) is None
         return
@@ -288,7 +279,7 @@ def solvable_puzzle(seed):
 
 def check_solve_against_brute_force(puzzle):
     e = _MiniEngine(puzzle)                            # asserts every accepted verdict is right
-    r = call(e.agent.solve, e)
+    r = e.agent.solve(e)
     moves, solved = brute_force_play(puzzle)
     assert [(s["cell"], s["verdict"]) for s in r["steps"]] == moves
     assert all(s["result"] == "ACCEPTED" for s in r["steps"])
@@ -299,7 +290,7 @@ def check_solve_against_brute_force(puzzle):
 
 @pytest.mark.parametrize("seed", range(30))
 def test_solve_plays_solvable_puzzles_to_the_end(seed):
-    puzzle = call(solvable_puzzle, seed)
+    puzzle = solvable_puzzle(seed)
     r = check_solve_against_brute_force(puzzle)
     assert r["status"] == "SOLVED" and len(r["steps"]) == 7      # 9 cells, 2 face-up
 
@@ -307,7 +298,7 @@ def test_solve_plays_solvable_puzzles_to_the_end(seed):
 @pytest.mark.parametrize("seed", range(30))
 def test_solve_stops_exactly_where_brute_force_gets_stuck(seed):
     rows, cols = [(3, 3), (2, 4), (3, 4)][seed % 3]
-    puzzle, _ = call(random_puzzle, 1000 + seed, rows, cols, 1 + seed % 2, STRONG_TYPES)
+    puzzle, _ = random_puzzle(1000 + seed, rows, cols, 1 + seed % 2, STRONG_TYPES)
     check_solve_against_brute_force(puzzle)
 
 
@@ -318,7 +309,7 @@ def test_inconsistent_kb():
                       "A2": {"type": "FACT", "who": "B1", "status": INNOCENT}},
                {"A1": INNOCENT, "A2": INNOCENT})
     a = LogicAgent()
-    assert call(a.classify, st) == INCONSISTENT
+    assert a.classify(st) == INCONSISTENT
     assert a.next_move(st) is None and a.hint(st) is None
 
 
@@ -326,7 +317,7 @@ def test_inconsistent_solve_status():
     cells = [Cell("A1", "a", "-", INNOCENT, {"type": "FACT", "who": "A1", "status": CRIMINAL}),
              Cell("B1", "b", "-", INNOCENT, {"type": "NONE", "text": "x"})]
     e = _MiniEngine(Puzzle("bad", 1, 2, cells, ["A1"]))
-    r = call(e.agent.solve, e)
+    r = e.agent.solve(e)
     assert r["status"] == INCONSISTENT and r["steps"] == []
 
 
@@ -334,7 +325,7 @@ def test_stuck_when_nothing_forced():
     cells = [Cell("A1", "a", "-", INNOCENT, {"type": "NONE", "text": "x"}),
              Cell("B1", "b", "-", CRIMINAL, {"type": "NONE", "text": "y"})]
     e = _MiniEngine(Puzzle("stuck", 1, 2, cells, ["A1"]))
-    r = call(e.agent.solve, e)
+    r = e.agent.solve(e)
     assert r["status"] == "STUCK" and r["steps"] == []
     assert e.agent.next_move(e.public_state()) is None and e.agent.hint(e.public_state()) is None
 
@@ -342,7 +333,7 @@ def test_stuck_when_nothing_forced():
 def test_all_cells_decided_gives_empty_dict():
     st = state(1, 2, {"A1": {"type": "NONE", "text": "x"}, "B1": {"type": "NONE", "text": "y"}},
                {"A1": INNOCENT, "B1": CRIMINAL})
-    assert call(LogicAgent().classify, st) == {}
+    assert LogicAgent().classify(st) == {}
 
 
 def test_hint_leaves_out_unneeded_clues():
@@ -353,7 +344,7 @@ def test_hint_leaves_out_unneeded_clues():
                       "A2": {"type": "SAME", "a": "C1", "b": "C2"}},
                {"A1": INNOCENT, "B1": INNOCENT, "A2": INNOCENT})
     a = LogicAgent()
-    assert call(a.classify, st) == {"C1": CRIMINAL, "B2": UNKNOWN, "C2": CRIMINAL}
+    assert a.classify(st) == {"C1": CRIMINAL, "B2": UNKNOWN, "C2": CRIMINAL}
     assert a.hint(st) == {"cell": "C1", "verdict": CRIMINAL, "because": ["A1"]}
 
 
@@ -363,13 +354,13 @@ def test_hint_prefers_one_clue_that_explains_alone():
                       "B1": {"type": "AT_LEAST", "k": 1, "region": {"kind": "cells", "cells": ["A2", "C3"]}},
                       "C1": {"type": "FACT", "who": "C3", "status": INNOCENT}},
                {"A1": INNOCENT, "B1": INNOCENT, "C1": INNOCENT})
-    assert call(LogicAgent().hint, st) == {"cell": "A2", "verdict": CRIMINAL, "because": ["A1"]}
+    assert LogicAgent().hint(st) == {"cell": "A2", "verdict": CRIMINAL, "because": ["A1"]}
 
 
 def test_cache_repeats_cost_nothing_and_results_are_copies():
     st = random_state(3)
     a = LogicAgent()
-    first = call(a.classify, st)
+    first = a.classify(st)
     calls = a.stats["sat_calls"]
     second = a.classify(copy.deepcopy(st))
     assert second == first and a.stats["sat_calls"] == calls
@@ -382,8 +373,8 @@ def test_state_not_modified_and_reset_stats():
     st = random_state(5)
     before = copy.deepcopy(st)
     a = LogicAgent()
-    call(a.classify, st)
-    call(a.hint, st)
+    a.classify(st)
+    a.hint(st)
     assert st == before
     assert a.stats["sat_calls"] > 0
     a.reset_stats()
@@ -394,15 +385,16 @@ def test_check_unique_false_cases():
     none = {"type": "NONE", "text": "x"}
     # No information: 2 grids.
     two = Puzzle("two", 1, 2, [Cell("A1", "a", "-", INNOCENT, none), Cell("B1", "b", "-", CRIMINAL, none)], ["A1"])
-    assert call(check_unique, two) is False
+    assert check_unique(two) is False
     # Contradiction: 0 grids.
     zero = Puzzle("zero", 1, 2, [Cell("A1", "a", "-", INNOCENT, {"type": "FACT", "who": "A1", "status": CRIMINAL}),
                                  Cell("B1", "b", "-", CRIMINAL, none)], ["A1"])
-    assert call(check_unique, zero) is False
+    assert check_unique(zero) is False
     # Face-down clue decides B1: unique.
+    fact_b1 = {"type": "FACT", "who": "B1", "status": CRIMINAL}
     one = Puzzle("one", 1, 2, [Cell("A1", "a", "-", INNOCENT, none),
-                               Cell("B1", "b", "-", CRIMINAL, {"type": "FACT", "who": "B1", "status": CRIMINAL})], ["A1"])
-    assert call(check_unique, one) is True
+                               Cell("B1", "b", "-", CRIMINAL, fact_b1)], ["A1"])
+    assert check_unique(one) is True
 
 
 def test_check_unique_blocks_only_primary_variables():
@@ -413,7 +405,7 @@ def test_check_unique_blocks_only_primary_variables():
         {"type": "FACT", "who": "A1", "status": CRIMINAL},
         {"type": "AT_MOST", "k": 7, "region": {"kind": "all"}}]})]
     puzzle_cells += [Cell(c, c, "-", INNOCENT, {"type": "FACT", "who": c, "status": INNOCENT}) for c in cells[1:]]
-    assert call(check_unique, Puzzle("slack", 4, 4, puzzle_cells, ["A1"])) is True
+    assert check_unique(Puzzle("slack", 4, 4, puzzle_cells, ["A1"])) is True
 
 
 def test_check_unique_ignores_aux_variables():
@@ -422,13 +414,13 @@ def test_check_unique_ignores_aux_variables():
     cells = [Cell("A1", "a", "-", CRIMINAL, {"type": "COUNT_LINES", "axis": "row", "k": 2,
                                               "where": {"type": "EXACTLY", "k": 1}}),
              Cell("A2", "b", "-", CRIMINAL, none)]
-    assert call(check_unique, Puzzle("aux", 2, 1, cells, ["A1"])) is True
+    assert check_unique(Puzzle("aux", 2, 1, cells, ["A1"])) is True
 
 
 @pytest.mark.parametrize("seed", range(40))
 def test_check_unique_matches_brute_force(seed):
     from encoder import evaluate_clue
-    puzzle, _ = call(random_puzzle, 2000 + seed, 2, 3, 1)
+    puzzle, _ = random_puzzle(2000 + seed, 2, 3, 1)
     cells = names(2, 3)
     by = {c.cell: c for c in puzzle.cells}
     count = 0
@@ -437,7 +429,7 @@ def test_check_unique_matches_brute_force(seed):
         if all(a[c] == (by[c].status == CRIMINAL) for c in puzzle.revealed) and \
            all(evaluate_clue(c.clue, a, 2, 3) for c in puzzle.cells):
             count += 1
-    assert call(check_unique, puzzle) is (count == 1)
+    assert check_unique(puzzle) is (count == 1)
 
 
 # ---------- reuse between calls ----------
@@ -457,7 +449,7 @@ def game_states(puzzle):
 def test_reuse_along_a_game_and_in_random_order(seed):
     """One agent fed the states of a game, then the same states shuffled (so most
     calls do not extend the previous one): every answer equals brute force."""
-    states = call(game_states, call(solvable_puzzle, 100 + seed))
+    states = game_states(solvable_puzzle(100 + seed))
     a = LogicAgent()
     for st in states:
         assert a.classify(st) == brute_force_classify(st)
@@ -468,11 +460,11 @@ def test_reuse_along_a_game_and_in_random_order(seed):
 
 
 def test_reuse_saves_sat_calls_and_reset_stats_starts_cold():
-    puzzle = call(solvable_puzzle, 7)
+    puzzle = solvable_puzzle(7)
     runs = []
     for optimized in (True, False):
         e = _MiniEngine(puzzle, LogicAgent(optimized=optimized))
-        runs.append(call(e.agent.solve, e))
+        runs.append(e.agent.solve(e))
     fast, plain = runs
     assert [s["cell"] for s in fast["steps"]] == [s["cell"] for s in plain["steps"]]
     assert fast["stats"]["sat_calls"] < plain["stats"]["sat_calls"]
@@ -490,7 +482,7 @@ def test_reuse_saves_sat_calls_and_reset_stats_starts_cold():
 def test_cache_depends_on_optimized():
     st = random_state(11)
     a = LogicAgent()
-    call(a.classify, st)
+    a.classify(st)
     a.optimized = False
     before = a.stats["sat_calls"]
     a.classify(st)
@@ -502,7 +494,7 @@ def test_inconsistent_extension_is_still_caught():
     # verdict that says B1 innocent. The reused forced value must not hide the conflict.
     first = state(1, 3, {"A1": {"type": "FACT", "who": "B1", "status": CRIMINAL}}, {"A1": INNOCENT})
     a = LogicAgent()
-    assert call(a.classify, first) == {"B1": CRIMINAL, "C1": UNKNOWN}
+    assert a.classify(first) == {"B1": CRIMINAL, "C1": UNKNOWN}
     second = state(1, 3, {"A1": first["revealed"]["A1"], "C1": {"type": "NONE", "text": "x"}},
                    {"A1": INNOCENT, "C1": INNOCENT, "B1": INNOCENT})
     second["revealed"]["B1"] = {"type": "NONE", "text": "y"}
@@ -529,7 +521,7 @@ def test_classify_with_auxiliary_variables_matches_brute_force(seed):
     cells = names(4, 4)
     while True:
         solution = {c: rng.random() < 0.45 for c in cells}
-        true_clues = [c for c in AUX_CLUES if call(evaluate_clue, c, solution, 4, 4)]
+        true_clues = [c for c in AUX_CLUES if evaluate_clue(c, solution, 4, 4)]
         if len(true_clues) >= 2:
             break
     holders = rng.sample(cells, len(true_clues) + rng.randint(0, 3))
@@ -539,4 +531,4 @@ def test_classify_with_auxiliary_variables_matches_brute_force(seed):
     st = state(4, 4, revealed, {h: CRIMINAL if solution[h] else INNOCENT for h in holders})
     expected = brute_force_classify(st)
     for optimized in (True, False):
-        assert call(LogicAgent(optimized=optimized).classify, st) == expected
+        assert LogicAgent(optimized=optimized).classify(st) == expected

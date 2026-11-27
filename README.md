@@ -28,7 +28,7 @@ Python 3.10+. Tkinter ships with Python.
 | `puzzles/*.json` | Puzzle set (+ generator) | Engine & Puzzle |
 | `tests/` | pytest | everyone |
 
-**Input / output of every function: [docs/INTERFACES.md](docs/INTERFACES.md).** Run `python -m pytest`: contract tests skip until a function is implemented, then check it.
+**Input / output of every function: [docs/INTERFACES.md](docs/INTERFACES.md).** `tests/test_contracts.py` checks them on `puzzles/p3_01.json`.
 
 **Rule:** only `GameEngine` reads hidden statuses and face-down clues. Agent, Hint and GUI use `engine.public_state()` only.
 
