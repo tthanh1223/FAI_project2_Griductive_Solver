@@ -473,24 +473,28 @@ class LevelGrid(tk.Frame):
         for r in range(rows):
             for col in range(cols):
                 cx, cy = gx + col * (cell + gap), y + 12 + r * (cell + gap)
-                c.create_rectangle(cx, cy, cx + cell, cy + cell, fill=t["panel"], outline=t["facedown_border"], tags=tag)
+                c.create_rectangle(cx, cy, cx + cell, cy + cell, fill=t["panel"], outline=t["facedown_border"],
+                                   tags=tag)
 
         c.create_text(x + 14, y + 22, text=level["id"], anchor="w", fill=t["text"], font=f["card_name"], tags=tag)
-        c.create_text(x + 14, y + 42, text=f"{cols} × {rows}", anchor="w", fill=t["muted"], font=f["card_small"], tags=tag)
+        c.create_text(x + 14, y + 42, text=f"{cols} × {rows}", anchor="w", fill=t["muted"], font=f["card_small"],
+                      tags=tag)
         if level["stars"]:
             stars = "★" * level["stars"] + "☆" * (3 - level["stars"])
             c.create_text(x + 14, y + 66, text=stars, anchor="w", fill=t["highlight"], font=f["body_bold"], tags=tag)
             c.create_text(x + 14 + f["body_bold"].measure(stars) + 8, y + 66, text=level["label"], anchor="w",
                           fill=t["muted"], font=f["card_small"], tags=tag)
         else:
-            c.create_text(x + 14, y + 66, text=level["label"], anchor="w", fill=t["muted"], font=f["card_small"], tags=tag)
+            c.create_text(x + 14, y + 66, text=level["label"], anchor="w", fill=t["muted"], font=f["card_small"],
+                          tags=tag)
 
         badge = "PLAYING" if playing else ("✓ SOLVED" if level["file"] in self.solved else None)
         if badge:
             colour = t["selected"] if playing else t["innocent"]
             bw = f["badge"].measure(badge) + 18
             _round_rect(c, x + 14, y + self.TILE_H - 30, x + 14 + bw, y + self.TILE_H - 12, 9, fill=colour, tags=tag)
-            c.create_text(x + 14 + bw / 2, y + self.TILE_H - 21, text=badge, fill=t["on_accent"], font=f["badge"], tags=tag)
+            c.create_text(x + 14 + bw / 2, y + self.TILE_H - 21, text=badge, fill=t["on_accent"], font=f["badge"],
+                          tags=tag)
 
         c.tag_bind(tag, "<Button-1>", lambda e, file=level["file"]: self.on_pick(file))
         if not playing:      # hover: only recolour this tile's border (redrawing would flicker)

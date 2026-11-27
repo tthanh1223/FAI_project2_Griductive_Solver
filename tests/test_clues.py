@@ -1,19 +1,11 @@
 """Clue tests from docs/CLUES.md section 7.
 
-Skipped while the functions they need still raise NotImplementedError.
-The sequential-counter test (CLUES.md 7.3) belongs to the Encoder owner: it needs a private switch.
+The sequential-counter tests (CLUES.md 7.3) call the private _encode_count with limit=0 to force it.
 """
 import itertools
 import random
 
 import pytest
-
-
-def call(fn, *args, **kwargs):
-    try:
-        return fn(*args, **kwargs)
-    except NotImplementedError:
-        pytest.skip(f"{fn.__qualname__} not implemented yet")
 
 
 def N(x):
@@ -63,15 +55,15 @@ def _equivalent(clue, rows, cols, assignments):
     from model import all_cells
     from encoder import VarMap, encode_clue, evaluate_clue
     from dpll import dpll_solve
-    cells = call(all_cells, rows, cols)
+    cells = all_cells(rows, cols)
     vm = VarMap(rows, cols)
-    cnf = call(encode_clue, clue, vm)
+    cnf = encode_clue(clue, vm)
     assert all(c and 0 not in c for c in cnf), "empty clause or literal 0"
     for bits in assignments(len(cells)):
         a = dict(zip(cells, bits))
         lits = [vm.var(x) if a[x] else -vm.var(x) for x in cells]
-        sat, _, _ = call(dpll_solve, cnf, vm.next_aux - 1, lits)
-        assert sat == call(evaluate_clue, clue, a, rows, cols), (clue, a)
+        sat, _, _ = dpll_solve(cnf, vm.next_aux - 1, lits)
+        assert sat == evaluate_clue(clue, a, rows, cols), (clue, a)
 
 
 @pytest.mark.parametrize("clue", CLUES_3x3, ids=lambda c: c["type"])
@@ -89,9 +81,9 @@ def test_encoder_matches_evaluator_4x5(cell):
 def test_real_puzzle_clues_true_on_solution():
     from model import all_cells
     from encoder import evaluate_clue
-    sol = {x: x in CRIMINALS_4x5 for x in call(all_cells, 5, 4)}
+    sol = {x: x in CRIMINALS_4x5 for x in all_cells(5, 4)}
     for cell, clue in CLUES_4x5.items():
-        assert call(evaluate_clue, clue, sol, 5, 4), cell
+        assert evaluate_clue(clue, sol, 5, 4), cell
 
 
 @pytest.mark.parametrize("region, expected", [
@@ -110,17 +102,17 @@ def test_real_puzzle_clues_true_on_solution():
 ])
 def test_regions_4x5(region, expected):
     from model import region_cells
-    assert call(region_cells, region, 5, 4) == expected
+    assert region_cells(region, 5, 4) == expected
 
 
 def test_edges_count():
     from model import region_cells
-    assert len(call(region_cells, {"kind": "edges"}, 5, 4)) == 14
+    assert len(region_cells({"kind": "edges"}, 5, 4)) == 14
 
 
 def test_cells_in_clue_includes_anchors():
     from model import cells_in_clue
-    assert call(cells_in_clue, CLUES_4x5["A5"], 5, 4) == ["B1", "B3", "A4", "B4", "B5"]
+    assert cells_in_clue(CLUES_4x5["A5"], 5, 4) == ["B1", "B3", "A4", "B4", "B5"]
 
 
 @pytest.mark.parametrize("clue", [
@@ -138,13 +130,8 @@ def test_cells_in_clue_includes_anchors():
 ], ids=lambda c: c["type"])
 def test_validate_rejects(clue):
     from encoder import validate_clue
-    try:
+    with pytest.raises(ValueError):
         validate_clue(clue, 5, 4)
-    except NotImplementedError:
-        pytest.skip("validate_clue not implemented yet")
-    except ValueError:
-        return
-    pytest.fail(f"accepted invalid clue {clue}")
 
 
 @pytest.mark.parametrize("n", [5, 6])
@@ -180,12 +167,8 @@ def test_sequential_counter_matches_combinations(n, kind):
                 "EXACTLY": total == k,
             }[kind]
 
-            sat_direct, _, _ = call(
-                dpll_solve, direct, direct_vm.next_aux - 1, fixed
-            )
-            sat_seq, _, _ = call(
-                dpll_solve, sequential, seq_vm.next_aux - 1, fixed
-            )
+            sat_direct, _, _ = dpll_solve(direct, direct_vm.next_aux - 1, fixed)
+            sat_seq, _, _ = dpll_solve(sequential, seq_vm.next_aux - 1, fixed)
             assert sat_direct == sat_seq == expected, (kind, n, k, bits)
 
 
@@ -223,7 +206,7 @@ SPEC_CLAUSES_4x5 = {"D1": 48, "B2": 12, "C2": 13, "C3": 2, "A4": 91,
 def test_clause_counts_match_spec(cell):
     from encoder import VarMap, encode_clue
     vm = VarMap(5, 4)
-    cnf = call(encode_clue, CLUES_4x5[cell], vm)
+    cnf = encode_clue(CLUES_4x5[cell], vm)
     assert len(cnf) == SPEC_CLAUSES_4x5[cell]
     assert vm.next_aux - 1 - 20 == (5 if cell == "A4" else 0)
 
@@ -232,12 +215,12 @@ def _matches_evaluator(cnf, vm, clue, rows, cols, assignments):
     from model import all_cells
     from encoder import evaluate_clue
     from dpll import dpll_solve
-    cells = call(all_cells, rows, cols)
+    cells = all_cells(rows, cols)
     assert all(c and 0 not in c for c in cnf), "empty clause or literal 0"
     for bits in assignments(len(cells)):
         a = dict(zip(cells, bits))
         lits = [vm.var(x) if a[x] else -vm.var(x) for x in cells]
-        sat, _, _ = call(dpll_solve, cnf, vm.next_aux - 1, lits)
+        sat, _, _ = dpll_solve(cnf, vm.next_aux - 1, lits)
         assert sat == evaluate_clue(clue, a, rows, cols), (clue, a)
 
 
@@ -253,7 +236,7 @@ def test_compact_parity_matches_evaluator(region, parity, count):
     from encoder import VarMap, _encode_parity
     clue = {"type": "PARITY", "parity": parity, "count": count, "region": region}
     vm = VarMap(3, 3)
-    cnf = call(_encode_parity, clue, vm, limit=0)
+    cnf = _encode_parity(clue, vm, limit=0)
     _matches_evaluator(cnf, vm, clue, 3, 3, _all_boards)
 
 
@@ -277,7 +260,7 @@ def test_compact_compare_matches_evaluator(pair, op, count):
     r1, r2 = COMPARE_PAIRS[pair]
     clue = {"type": "COMPARE", "r1": r1, "op": op, "r2": r2, "count": count}
     vm = VarMap(3, 3)
-    cnf = call(_encode_compare, clue, vm, limit=0)
+    cnf = _encode_compare(clue, vm, limit=0)
     _matches_evaluator(cnf, vm, clue, 3, 3, _all_boards)
 
 
@@ -297,7 +280,7 @@ def test_16_cell_clues_are_small_and_correct(clue):
     """|U| = 16 on 4x4: no 2^16-row truth table, still equal to the evaluator."""
     from encoder import VarMap, encode_clue
     vm = VarMap(4, 4)
-    cnf = call(encode_clue, clue, vm)
+    cnf = encode_clue(clue, vm)
     assert len(cnf) < 1000
     rng = random.Random(14003)
     _matches_evaluator(cnf, vm, clue, 4, 4,

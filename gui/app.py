@@ -401,7 +401,8 @@ class App:
         tk.Misc.tkraise(box)          # Canvas.lift() raises canvas items, not the widget
         self.sfx.play("win")
         Tape(box.body, t, f, text="CASE CLOSED  •  ").pack(fill="x")
-        tk.Label(box.body, text="Puzzle solved!", font=f["title"], bg=t["panel"], fg=t["text"]).pack(anchor="w", pady=(16, 2))
+        tk.Label(box.body, text="Puzzle solved!", font=f["title"], bg=t["panel"], fg=t["text"]).pack(
+            anchor="w", pady=(16, 2))
         total = state["rows"] * state["cols"]
         tk.Label(box.body, text=f"All {total} people are judged in {len(self.trace)} steps, and every verdict "
                                 f"was proved from the revealed clues — no guessing.",
@@ -612,11 +613,6 @@ class App:
             puzzle = model.load_puzzle(str(path))
             new_agent = agent.LogicAgent()
             new_engine = engine.GameEngine(puzzle, new_agent)
-        except NotImplementedError as e:
-            messagebox.showerror("Not implemented yet",
-                                 f"A function this window needs is not written yet:\n{e or 'NotImplementedError'}",
-                                 parent=self.root)
-            return False
         except Exception as e:
             messagebox.showerror("Cannot load puzzle", f"{Path(path).name}\n\n{type(e).__name__}: {e}",
                                  parent=self.root)
@@ -833,8 +829,6 @@ class App:
 
     @staticmethod
     def _error_feedback(what, error):
-        if isinstance(error, NotImplementedError):
-            return ("error", "Not implemented yet", f"{what}: a function this needs is not written yet.")
         return ("error", "Error", f"{what}: {type(error).__name__}: {error}")
 
     def _error(self, what, error):

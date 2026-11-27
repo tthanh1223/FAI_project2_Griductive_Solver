@@ -9,7 +9,7 @@ from pathlib import Path
 
 import pytest
 
-from model import CRIMINAL, INNOCENT, Cell, Puzzle, all_cells, load_puzzle
+from model import CRIMINAL, INNOCENT, Cell, Puzzle, load_puzzle
 from puzzles.generate import difficulty
 from puzzles.validate import main, puzzle_problems
 
